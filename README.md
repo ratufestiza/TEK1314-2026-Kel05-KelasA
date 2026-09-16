@@ -43,9 +43,10 @@ Topologi jaringan dirancang menggunakan segmen:
 
 # Port yang Menjadi Fokus Pengujian
 
-| No | Hostname | Device | IP Address | Subnet Mask | Gateway | OS Direncanakan |
-|----|----------|--------|------------|-------------|---------|-----------------|
-| 1 | SW-K05 | Switch 2960-24TT | 192.168.5.2 | 255.255.255.0 | - | Cisco IOS 15.0 |
-| 2 | Target-Node-K05 | Server-PT | 192.168.5.5 | 255.255.255.0 | - | Ubuntu Server CLI + DVWA |
-| 3 | Attacker-Node-K05 | PC-PT | 192.168.5.100 | 255.255.255.0 | - | Kali Linux |
-| 4 | Monitoring-Node-K05 | Server-PT | 192.168.5.200 | 255.255.255.0 | - | Security Onion |
+| Port | Protokol | Service | Keterangan |
+|------|----------|---------|------------|
+| 80 | TCP | HTTP | Web server DVWA — target utama |
+| 443 | TCP | HTTPS | Web server versi TLS |
+| 22 | TCP | SSH | Remote login Ubuntu Server |
+| 3306 | TCP | MySQL | Database backend DVWA |
+
