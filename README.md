@@ -51,3 +51,5 @@ Topologi jaringan dirancang menggunakan segmen:
 | 3306 | TCP | MySQL | Database backend DVWA |
 
 # Struktur Design
+
+documentation/topologi.jpeg
