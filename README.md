@@ -56,6 +56,5 @@ Topologi jaringan dirancang menggunakan segmen:
 
 folder ini berisi topologi dan skema IP, port dan penjelasannya. 
 
-documentation/topologi.jpeg
 
 
