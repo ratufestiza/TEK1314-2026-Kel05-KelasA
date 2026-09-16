@@ -52,6 +52,5 @@ Topologi jaringan dirancang menggunakan segmen:
 
 # Struktur Design
 
-documentation/ip_plan.md - diagram topologi jaringan 
+[documentation] folder ini berisi topologi dan skema IP, port dan penjelasannya.
 
-[documentation](./ip_plan.md) - Ip Table
