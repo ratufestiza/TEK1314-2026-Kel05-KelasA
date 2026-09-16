@@ -52,5 +52,10 @@ Topologi jaringan dirancang menggunakan segmen:
 
 # Struktur Design
 
-[documentation] folder ini berisi topologi dan skema IP, port dan penjelasannya.
+[Folder Dokumentasi](./documentation)
+
+folder ini berisi topologi dan skema IP, port dan penjelasannya. 
+
+documentation/topologi.jpeg
+
 
