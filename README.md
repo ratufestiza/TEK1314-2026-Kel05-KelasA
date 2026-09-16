@@ -52,6 +52,6 @@ Topologi jaringan dirancang menggunakan segmen:
 
 # Struktur Design
 
-[documentation](./topologi.jpeg) - diagram topologi jaringan 
+documentation/ip_plan.md - diagram topologi jaringan 
 
 [documentation](./ip_plan.md) - Ip Table
