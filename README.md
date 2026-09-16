@@ -50,3 +50,4 @@ Topologi jaringan dirancang menggunakan segmen:
 | 22 | TCP | SSH | Remote login Ubuntu Server |
 | 3306 | TCP | MySQL | Database backend DVWA |
 
+# Struktur Design
