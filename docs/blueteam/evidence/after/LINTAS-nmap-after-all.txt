@@ -1,0 +1,10 @@
+# Nmap 7.80 scan initiated Mon Oct 19 00:21:07 2026 as: nmap -sS -p- -T4 -oN after-all.txt 192.168.5.5
+Nmap scan report for 192.168.5.5
+Host is up (0.0012s latency).
+Not shown: 65533 filtered ports
+PORT     STATE SERVICE
+1883/tcp open  mqtt
+3000/tcp open  ppp
+MAC Address: 08:00:27:0C:B8:48 (Oracle VirtualBox virtual NIC)
+
+# Nmap done at Mon Oct 19 00:34:08 2026 -- 1 IP address (1 host up) scanned in 780.26 seconds

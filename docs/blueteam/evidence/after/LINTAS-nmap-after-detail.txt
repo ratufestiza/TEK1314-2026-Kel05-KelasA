@@ -1,0 +1,108 @@
+# Nmap 7.80 scan initiated Mon Oct 19 00:19:01 2026 as: nmap -sV -sC -p 22,80,1883,3000,3306,9090 -oN after-detail.txt 192.168.5.5
+Nmap scan report for 192.168.5.5
+Host is up (0.0019s latency).
+
+PORT     STATE    SERVICE    VERSION
+22/tcp   open     ssh        OpenSSH 10.2p1 Ubuntu 2ubuntu3.8 (Ubuntu Linux; protocol 2.0)
+80/tcp   filtered http
+1883/tcp open     mqtt
+|_mqtt-subscribe: ERROR: Script execution failed (use -d to debug)
+3000/tcp open     ppp?
+| fingerprint-strings: 
+|   GetRequest: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.5 Python/3.14.4
+|     Date: Mon, 19 Oct 2026 00:19:11 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 63
+|     Connection: close
+|     <h1>Dashboard IoT PBL5</h1><p>Coba /sensor?device=sensor-01</p>
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Server: Werkzeug/3.1.5 Python/3.14.4
+|     Date: Mon, 19 Oct 2026 00:19:16 GMT
+|     Content-Type: text/html; charset=utf-8
+|     Allow: GET, OPTIONS, HEAD
+|     Content-Length: 0
+|     Connection: close
+|   Help: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <style type="text/css">
+|     :root {
+|     color-scheme: light dark;
+|     </style>
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request syntax ('HELP').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|     </html>
+|   RTSPRequest: 
+|     <!DOCTYPE HTML>
+|     <html lang="en">
+|     <head>
+|     <meta charset="utf-8">
+|     <style type="text/css">
+|     :root {
+|     color-scheme: light dark;
+|     </style>
+|     <title>Error response</title>
+|     </head>
+|     <body>
+|     <h1>Error response</h1>
+|     <p>Error code: 400</p>
+|     <p>Message: Bad request version ('RTSP/1.0').</p>
+|     <p>Error code explanation: 400 - Bad request syntax or unsupported method.</p>
+|     </body>
+|_    </html>
+3306/tcp filtered mysql
+9090/tcp filtered zeus-admin
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port3000-TCP:V=7.80%I=7%D=10/19%Time=6AD561FF%P=x86_64-pc-linux-gnu%r(G
+SF:etRequest,EC,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug/3\.1\.5\x20
+SF:Python/3\.14\.4\r\nDate:\x20Mon,\x2019\x20Oct\x202026\x2000:19:11\x20GM
+SF:T\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nContent-Length:\x2
+SF:063\r\nConnection:\x20close\r\n\r\n<h1>Dashboard\x20IoT\x20PBL5</h1><p>
+SF:Coba\x20/sensor\?device=sensor-01</p>")%r(Help,1E4,"<!DOCTYPE\x20HTML>\
+SF:n<html\x20lang=\"en\">\n\x20\x20\x20\x20<head>\n\x20\x20\x20\x20\x20\x2
+SF:0\x20\x20<meta\x20charset=\"utf-8\">\n\x20\x20\x20\x20\x20\x20\x20\x20<
+SF:style\x20type=\"text/css\">\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x
+SF:20\x20:root\x20{\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\
+SF:x20\x20\x20color-scheme:\x20light\x20dark;\n\x20\x20\x20\x20\x20\x20\x2
+SF:0\x20\x20\x20\x20\x20}\n\x20\x20\x20\x20\x20\x20\x20\x20</style>\n\x20\
+SF:x20\x20\x20\x20\x20\x20\x20<title>Error\x20response</title>\n\x20\x20\x
+SF:20\x20</head>\n\x20\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20
+SF:<h1>Error\x20response</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x2
+SF:0code:\x20400</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x
+SF:20request\x20syntax\x20\('HELP'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x
+SF:20<p>Error\x20code\x20explanation:\x20400\x20-\x20Bad\x20request\x20syn
+SF:tax\x20or\x20unsupported\x20method\.</p>\n\x20\x20\x20\x20</body>\n</ht
+SF:ml>\n")%r(HTTPOptions,C7,"HTTP/1\.1\x20200\x20OK\r\nServer:\x20Werkzeug
+SF:/3\.1\.5\x20Python/3\.14\.4\r\nDate:\x20Mon,\x2019\x20Oct\x202026\x2000
+SF::19:16\x20GMT\r\nContent-Type:\x20text/html;\x20charset=utf-8\r\nAllow:
+SF:\x20GET,\x20OPTIONS,\x20HEAD\r\nContent-Length:\x200\r\nConnection:\x20
+SF:close\r\n\r\n")%r(RTSPRequest,1E9,"<!DOCTYPE\x20HTML>\n<html\x20lang=\"
+SF:en\">\n\x20\x20\x20\x20<head>\n\x20\x20\x20\x20\x20\x20\x20\x20<meta\x2
+SF:0charset=\"utf-8\">\n\x20\x20\x20\x20\x20\x20\x20\x20<style\x20type=\"t
+SF:ext/css\">\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20:root\x20{\
+SF:n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20color-
+SF:scheme:\x20light\x20dark;\n\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20
+SF:\x20}\n\x20\x20\x20\x20\x20\x20\x20\x20</style>\n\x20\x20\x20\x20\x20\x
+SF:20\x20\x20<title>Error\x20response</title>\n\x20\x20\x20\x20</head>\n\x
+SF:20\x20\x20\x20<body>\n\x20\x20\x20\x20\x20\x20\x20\x20<h1>Error\x20resp
+SF:onse</h1>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\x20code:\x20400</p>
+SF:\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Message:\x20Bad\x20request\x20vers
+SF:ion\x20\('RTSP/1\.0'\)\.</p>\n\x20\x20\x20\x20\x20\x20\x20\x20<p>Error\
+SF:x20code\x20explanation:\x20400\x20-\x20Bad\x20request\x20syntax\x20or\x
+SF:20unsupported\x20method\.</p>\n\x20\x20\x20\x20</body>\n</html>\n");
+MAC Address: 08:00:27:0C:B8:48 (Oracle VirtualBox virtual NIC)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Oct 19 00:20:33 2026 -- 1 IP address (1 host up) scanned in 92.34 seconds
