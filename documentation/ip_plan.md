@@ -96,7 +96,7 @@ Aplikasi latihan generik seperti DVWA tidak dipakai, karena tujuan replika adala
 |---------|------|--------|
 | SSH | 22 | Aktif, hanya kunci publik |
 | Dashboard Flask | 3000 | Aktif |
-| MQTT Mosquitto | 1883 | Aktif, autentikasi belum diaktifkan |
+| MQTT Mosquitto | 1883 | Aktif. Sejak 25 November 2026 autentikasi diaktifkan dengan `allow_anonymous false` dan `password_file`, tetapi belum berlaku karena berkas `conf.d/pb15-awal.conf` masih menimpa konfigurasi tersebut |
 | MySQL | 3306 | Aktif, hanya loopback |
 | HTTP Apache | 80 | Dimatikan |
 
@@ -118,5 +118,6 @@ Pembuktian tangkapan dilakukan dengan tcpdump pada antarmuka segmen, lalu dibaca
 
 - 12 September 2026: desain awal, masih memakai aplikasi latihan generik sebagai target.
 - 19 Oktober 2026: dokumen diperbarui sesuai implementasi. Target memakai dashboard Flask, MQTT, dan MySQL yang mereplikasi tech stack produk IoT kelompok. Tabel port disesuaikan dengan hasil pemindaian.
+- 25 November 2026: kolom status MQTT diperbarui. Autentikasi sudah dikonfigurasi pada tanggal ini tetapi belum berlaku karena berkas konfigurasi lama masih menimpa. Status ditulis apa adanya, tidak dibulatkan menjadi selesai.
 - Seluruh alamat bersifat statis dan hanya berubah bila disepakati Red Team dan Blue Team.
 - Segmen 192.168.5.0/24 khusus kelompok 5 dan tidak tumpang tindih dengan kelompok lain.

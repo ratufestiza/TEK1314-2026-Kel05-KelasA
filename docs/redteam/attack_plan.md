@@ -58,14 +58,14 @@ Tools tiap skenario disebut eksplisit sejak tahap rencana supaya Blue bisa menyi
 
 ## Rencana tangkapan bukti
 
-Tiap skenario disimpan di `docs/redteam/evidence/` dengan nama `skenario-1-recon/`, `skenario-2-exploit/`, dan `skenario-3-web/`. Isinya keluaran perintah dan tangkapan layar. Folder diisi bertahap mulai Minggu 10.
+Tiap skenario disimpan di `docs/redteam/evidence/` dengan nama `skenario-1-recon/`, `skenario-2-exploit/`, dan `skenario-3-web-mqtt/`. Isinya keluaran perintah dan tangkapan layar. Folder diisi bertahap mulai Minggu 10.
 
 ## Tugas Red Team
 
 | Waktu | Tugas | Berkas yang disentuh |
 | --- | --- | --- |
 | Minggu 9 | Menjelaskan rencana tiga skenario di depan kelas, dan ikut mengisi kolom kiri deklarasi tech stack | `docs/presentation-minggu9/`, `docs/presentation-minggu9/tech_stack_declaration.md` |
-| Minggu 10 | Eksekusi tiga skenario terhadap Target Node yang sudah di-hardening, simpan keluaran perintah dan tangkapan layar | `docs/redteam/evidence/skenario-1-recon/`, `skenario-2-exploit/`, `skenario-3-web/` |
+| Minggu 10 | Eksekusi tiga skenario terhadap Target Node yang sudah di-hardening, simpan keluaran perintah dan tangkapan layar | `docs/redteam/evidence/skenario-1-recon/`, `skenario-2-exploit/`, `skenario-3-web-mqtt/` |
 | Minggu 10 | Mengisi tahap 1 (Serang) dan tahap 3 (Analisis) pada tiap skenario | `docs/purple-team-log.md` |
 | Minggu 11 | Mengulang serangan yang sama setelah mitigasi Blue, lalu mengisi tahap 5 (Verifikasi) | `docs/purple-team-log.md` |
 | Minggu 11 | Menyumbang bagian serangan pada Vulnerability Assessment Report | laporan Minggu 11 |

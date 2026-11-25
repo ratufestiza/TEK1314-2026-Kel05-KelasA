@@ -1,0 +1,9 @@
+Nama Aset,Jenis,VM,Alamat,Peran,Port Terbuka,Keterangan
+ubuntu-syamil,Server Ubuntu Server 26.04 LTS,UBUNTU SYAMIL,192.168.5.5,Target Node,"22, 1883, 3000",Port 3306 hanya loopback setelah hardening
+mysql_app,Database MySQL 8.4,UBUNTU SYAMIL,127.0.0.1,Penimpanan data sensor,-,Basis data iot_db dengan tabel sensor_readings
+dashboard_iot,Aplikasi web Flask,UBUNTU SYAMIL,192.168.5.5,Antarmuka monitoring,3000,Endpoint /sensor membaca data sensor
+broker_mqtt,Message broker Mosquitto,UBUNTU SYAMIL,192.168.5.5,Jalur data sensor,1883,Topik sensors/#
+sshd,Layanan SSH OpenSSH,UBUNTU SYAMIL,192.168.5.5,Akses administrasi,22,Kunci publik saja setelah hardening
+rsyslog,Layanan pengirim log,UBUNTU SYAMIL,192.168.5.5,Pengirim log ke SIEM,-,Mengirim ke 192.168.5.200 port 514
+labvm-attacker,Mesin penyerang,Cybersecurity LabVM,192.168.5.100,Attacker,-,Tidak ada layanan yang dibuka
+security-onion,SIEM Security Onion,CyberOps Security Onion,192.168.5.200,Monitoring dan penerima log,"514, 5601",Kibana pada 5601

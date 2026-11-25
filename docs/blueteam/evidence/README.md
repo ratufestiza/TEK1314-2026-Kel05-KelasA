@@ -35,3 +35,16 @@ Aturan kredensial: kalau di layar sedang tampil nilai kata sandi, bagian itu dip
 ## Catatan
 
 C1 tidak punya screenshot before tersendiri karena gambar lama pada tahap itu ikut menangkap nilai kata sandi basis data, sehingga tidak boleh dipakai. Sebagai gantinya, keadaan sebelum C1 dibuktikan oleh `before/LINTAS-recon-awal.png` dan `before/LINTAS-nmap-before-detail.txt`, yang sama-sama menunjukkan port 3306 terbuka beserta versi MySQL-nya.
+
+
+## Bukti sesudah mitigasi
+
+Folder `docs/final/bukti-verifikasi/` memuat tangkapan dari sesi verifikasi tanggal 25 November 2026. Isinya bukan bagian dari sepuluh kontrol hardening, tetapi bukti bahwa perbaikan pada Fase 3 benar-benar berlaku.
+
+| Kode | Berkas | Isi |
+| --- | --- | --- |
+| V1 | `docs/final/bukti-verifikasi/V1-verifikasi-sqli-baseline-dan-or.png` | Pembanding normal dalam bentuk JSON, lalu payload OR menghasilkan array kosong |
+| V2 | `docs/final/bukti-verifikasi/V2-verifikasi-union-200.png` | Payload UNION menghasilkan HTTP 200 dengan badan kosong |
+| V4 | `docs/final/bukti-verifikasi/V4-pcap-45-paket.png` | Tangkapan lalu lintas sesi verifikasi, 45 paket |
+
+Verifikasi MQTT tidak punya berkas di folder ini karena hasilnya belum memenuhi syarat. Keluaran yang tercatat adalah `CONNACK 0` dari mesin target, artinya broker masih menerima klien anonim. Kondisi itu dijelaskan pada laporan bagian 6.3 dan tidak dinaikkan statusnya menjadi selesai.
