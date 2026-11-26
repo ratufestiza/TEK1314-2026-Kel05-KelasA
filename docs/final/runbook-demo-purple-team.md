@@ -266,6 +266,80 @@ Kalau ditanya kenapa masih terbuka: "Karena kami memilih mencatat apa adanya dar
 
 ---
 
+# Bagian 4b - Peran Onion, deteksi dan Kibana
+
+Onion bukan mesin penyerang dan bukan mesin target. Ini posisi Blue Team. Semua yang berhubungan dengan pantauan dilakukan di sini.
+
+## Aturan tampilan
+
+Kibana dibuka **di dalam VM Onion**, pakai browser yang ada di VM itu, alamatnya `https://localhost` atau `https://127.0.0.1`.
+
+Jangan buka dari VM Attacker. Itu salah alur, dan kalau ditanya dosen alasannya tidak ada.
+
+Kalau mau ditampilkan di layar yang sama dengan penonton, tampilkan jendela Onion, bukan jendela Attacker.
+
+## Menyalakan layanan sebelum demo
+
+Di VM Onion:
+
+`sudo so-status`
+
+Cari baris `so-elasticsearch` dan `so-kibana`. Kalau `stopped`:
+
+`sudo so-elasticsearch-start`
+
+`sudo so-kibana-start`
+
+Kalau perintah itu tidak ada di image, pakai Docker:
+
+`sudo docker ps -a | grep -e kibana -e elastic`
+
+`sudo docker start so-elasticsearch`
+
+`sudo docker start so-kibana`
+
+Tunggu satu sampai dua menit. Kibana butuh Elasticsearch siap dulu, jadi jangan nyalakan dua-duanya lalu langsung buka browser.
+
+Cek dari VM Onion sendiri:
+
+`curl -k -s -o /dev/null -w '%{http_code}\n' https://localhost`
+
+Kalau keluar `302` atau `200`, sudah siap.
+
+## Menit 15-18, demo deteksi
+
+Yang ditunjukkan di Kibana:
+
+1. Buka menu **Discover**.
+2. Set rentang waktu ke 30 menit terakhir.
+3. Tambahkan kolom `source.ip` dan `destination.port`.
+4. Filter: `source.ip : "192.168.5.100"` dan `destination.ip : "192.168.5.5"`.
+
+Yang akan kelihatan: lalu lintas pemindaian dan percobaan koneksi dari Attacker ke Target. Di catatan proyek tercatat 50 hit untuk pola ini.
+
+Kalimat yang diucapkan: "Yang terekam di sini adalah pola jaringan, yaitu percobaan koneksi berulang ke banyak port. Sensor menangkap bentuknya, bukan isi payload-nya."
+
+## Batas deteksi yang harus disebut
+
+Ini bagian yang membuat presentasi terlihat jujur, jadi jangan dilewati.
+
+1. Tidak ada signature yang mengenali payload SQL injection di parameter URL. Jadi serangan 3a tidak muncul sebagai alert khusus, hanya sebagai permintaan HTTP biasa.
+2. Tidak ada signature yang mengenali penyisipan pesan MQTT. Serangan 3b praktis tidak terlihat dari sisi jaringan.
+3. Alert yang muncul lebih banyak soal ICMP dan aktivitas umum, bukan pola serangan aplikasi.
+4. Sensor berjalan dalam mode import, jadi kelengkapan bukti bergantung pada benar atau tidaknya berkas tangkapan diambil.
+
+Kalimat penutupnya: "Deteksi kami kuat di lapisan jaringan dan lemah di lapisan aplikasi. Itu kesenjangan yang kami catat, bukan yang kami sembunyikan."
+
+## Kalau Kibana tidak mau terbuka
+
+Jangan habiskan waktu di depan penonton. Cukup katakan layanan monitoring sedang tidak aktif, lalu lanjut ke skenario 3. Tiga skenario tetap bisa diperagakan penuh tanpa Kibana, dan bagian deteksi bisa dijelaskan lewat tangkapan layar bukti yang sudah ada di lampiran laporan.
+
+## Selisih waktu
+
+Kibana memakai UTC, catatan tim memakai WIB. Selisihnya tujuh jam. Kalau ada yang bertanya kenapa jamnya beda dengan jam di HP, jawabannya itu.
+
+---
+
 # Bagian 5 - Kalau ada yang mati di tengah demo
 
 **Dashboard tidak menjawab.** Di VM Target:
