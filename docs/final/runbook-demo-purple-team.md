@@ -62,6 +62,8 @@ Cek log subscriber, harus ada `menunggu pesan di sensors/#`:
 
 Kalau `app.py.aman` ukurannya sama dengan `app.py`, versi amannya hilang dan sesi mitigasi tidak punya tujuan. Ambil ulang dari repo, berkasnya ada di `docs/final/lampiran-kode/`, lalu pasang dengan `sudo cp`.
 
+Satu hal yang sering bikin bingung: kalau `app.py` ditimpa sementara aplikasi masih jalan, ukuran berkas di disk akan benar tapi perilakunya tetap lama. Python memuat kode ke memori saat start. Jadi matikan proses dulu, baru salin.
+
 ## 0.5 Target, pastikan MQTT terbuka
 
 `cat /etc/mosquitto/conf.d/default.conf`
@@ -341,37 +343,47 @@ Catatan penting: subscriber hanya menerima angka polos atau JSON dengan kunci `s
 
 ## Menit 32-40, mitigasi dan verifikasi
 
-**Di VM Target, peran Blue Team:**
+Urutannya penting. Matikan dulu, baru timpa berkas, baru nyalakan. Kalau berkas ditimpa saat aplikasi masih jalan, Python tetap memakai kode lama yang sudah ada di memori, dan verifikasi akan gagal padahal berkasnya sudah benar. Itu sudah pernah kejadian.
+
+**Langkah 1, di VM Target, matikan proses lama dulu:**
+
+`ps -eo pid,cmd | grep app.py | grep -v grep`
+
+Lihat baris `python3 app.py`, catat PID-nya. Lalu:
+
+`sudo kill <PID>`
+
+Pastikan port sudah lepas, kalau masih muncul ulangi dengan `sudo kill -9 <PID>`:
+
+`ss -tln | grep 3000`
+
+**Langkah 2, baru timpa berkasnya:**
 
 `cd /opt/iot-dashboard`
 
 `sudo cp app.py.aman app.py`
 
-`ps -eo pid,cmd | grep app.py | grep -v grep`
+`ls -l app.py app.py.aman`
 
-Catat PID-nya, biasanya proses paling bawah yang `python3 app.py`. Lalu:
+Ukuran keduanya harus sama, 1791 byte. Kalau beda, `app.py.aman` sudah rusak dan mitigasi tidak akan berhasil.
 
-`sudo kill <PID>`
-
-Pastikan port sudah lepas:
-
-`ss -tln | grep 3000`
-
-Kalau masih muncul, ulangi dengan `sudo kill -9 <PID>`.
-
-Setelah port lepas, jalankan versi baru:
+**Langkah 3, nyalakan ulang:**
 
 `sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
 
-Tunggu, lalu pastikan:
+Tunggu tiga detik, lalu pastikan port hidup lagi dan log tidak memuat `Address already in use`:
 
 `ss -tln | grep 3000`
+
+`tail -3 /tmp/dashboard.log`
 
 **Di VM Attacker, ulangi payload yang sama persis:**
 
 `curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
 
 Hasil yang diharapkan: JSON dengan `"jumlah": 0`, bukan empat baris.
+
+Kalau masih keluar baris data, berarti proses lama masih hidup. Cek `ss -tln | grep 3000`, matikan PID-nya, ulangi dari Langkah 3.
 
 Yang diucapkan: "Payload sama, hasil nol. Yang berubah bukan serangannya, tapi cara aplikasi memperlakukan masukan."
 
@@ -513,6 +525,10 @@ Harus muncul `menunggu pesan di sensors/#`.
 9. Subscriber menolak payload berkoma. `99.90,0.00` masuk log sebagai `dilewati, payload bukan angka atau JSON`. Pakai angka polos `99.90` atau JSON `{"suhu": 99.90, "kelembapan": 0}`.
 
 10. Port masih dipegang proses lama, ditandai `Address already in use` di log. Gejalanya aplikasi baru tidak jalan tapi berkasnya sudah benar. Selalu cek `ss -tln | grep 3000` sebelum menyalakan ulang.
+
+11. Berkas ditimpa saat aplikasi masih jalan. Ukuran di disk jadi benar, tapi perilaku tetap lama karena Python sudah memuat kode ke memori. Urutan yang benar: matikan proses, salin berkas, baru nyalakan.
+
+12. Jangan pernah menjalankan `sudo cp app.py.aman app.py` dua arah. Kalau `app.py` yang sedang aktif masih versi aman lalu disalin ke `app.py.aman`, versi amannya tertimpa dan tidak ada lagi pembanding untuk demo mitigasi.
 
 ---
 
