@@ -10,15 +10,17 @@ Narasi presentasi. Urutan ikut `demo-dari-awal.md`.
 
 **Narasi:**
 
-Selamat malam. Saya Fattih, Kelompok 5, skenario 05, Internal Database Fortress.
+Selamat malam. Saya Fattih, dari Kelompok 5, skenario 05, Internal Database Fortress.
 
-Sistem kami sprinkler otomatis untuk kandang sapi perah. Sensor membaca suhu dan kelembapan, data masuk ke basis data, lalu tampil di dashboard.
+Sistem yang kami bangun adalah sprinkler otomatis untuk kandang sapi perah. Sensor membaca suhu dan kelembapan, data dikirim ke basis data, lalu ditampilkan di dashboard. Keputusan penyiraman diambil dari data itu.
 
-Jika data sensor dipalsukan, penyiram dapat menyala pada waktu yang salah.
+Artinya, kalau datanya salah, tindakan yang diambil juga salah. Penyiram bisa menyala saat kandang sebenarnya tidak panas, atau diam saat suhu benar-benar naik.
 
-Tiga mesin: target 192.168.5.5, penyerang 192.168.5.100, pemantau 192.168.5.200.
+Karena itu, yang kami uji bukan sensornya, melainkan jalur datanya, dari sensor sampai dashboard.
 
-Metodenya purple team. Setelah serangan, kami menyiapkan mitigasi, lalu mengulang serangan yang sama.
+Pengujian berlangsung pada tiga mesin dalam satu segmen tertutup. Target di 192.168.5.5, penyerang di 192.168.5.100, dan pemantau di 192.168.5.200.
+
+Metodenya purple team. Kami menyerang, menyiapkan mitigasi, lalu mengulang serangan yang sama untuk membuktikan hasilnya.
 
 ---
 
@@ -37,7 +39,9 @@ Metodenya purple team. Setelah serangan, kami menyiapkan mitigasi, lalu mengulan
 
 **Narasi:**
 
-Ketiga mesin dinyalakan. Urutannya target, penyerang, pemantau.
+Pertama, ketiga mesin dinyalakan dengan urutan target, penyerang, lalu pemantau. Pemantau dinyalakan terakhir karena memerlukan waktu paling lama untuk mencapai kondisi siap.
+
+Setelah itu kami pastikan ketiganya benar-benar berjalan sebelum pengujian dimulai.
 
 ---
 
@@ -53,11 +57,13 @@ sudo bash /tmp/purple.sh reset
 
 **Narasi:**
 
-Sebelum pengujian, target dikembalikan ke kondisi sebelum mitigasi. Tanpa ini, serangan tidak akan berhasil.
+Sebelum pengujian, mesin target dikembalikan ke kondisi sebelum mitigasi. Langkah ini wajib. Kalau target sudah dalam kondisi aman, serangan tidak akan berhasil, dan tidak ada yang bisa dibuktikan.
 
-Proses lama dihentikan lebih dahulu. Jika berkas diganti saat aplikasi masih berjalan, aplikasi tetap memakai kode di memori.
+Proses pengembaliannya mencakup pemasangan aplikasi versi rentan, pembukaan layanan pesan, pembersihan data uji dari sesi sebelumnya, dan pelepasan blokir yang tertinggal.
 
-Skrip memastikan hasilnya benar-benar kondisi rentan.
+Ada satu hal yang sering terlewat di tahap ini. Proses lama harus dihentikan lebih dahulu. Jika berkas aplikasi diganti sementara aplikasinya masih berjalan, aplikasi tetap memakai kode yang sudah dimuat ke memori. Berkasnya sudah benar, tetapi perilakunya tidak berubah.
+
+Di akhir, skrip memeriksa sendiri hasilnya. Kalau statusnya masih terbaca aman, pengujian tidak dilanjutkan.
 
 ---
 
@@ -74,13 +80,13 @@ sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap -U
 
 **Narasi:**
 
-Pengujian dimulai dari titik pemantauan, karena seluruh serangan harus terekam.
+Pengujian dimulai dari titik pemantauan, karena seluruh rangkaian serangan harus terekam.
 
-Antarmuka ke segmen target adalah eth2, alamat 192.168.5.200.
+Pertama kami pastikan antarmuka mana yang terhubung ke segmen target. Alamat pemantau adalah 192.168.5.200, dan antarmukanya eth2. Seluruh lalu lintas antara penyerang dan target melewati antarmuka ini, jadi kami tidak perlu memasang alat apa pun di mesin penyerang.
 
-Rekaman dimulai sebelum serangan, karena sensor di sini menganalisis berkas tangkapan, bukan memantau kabel langsung.
+Perekaman dimulai sebelum serangan pertama, bukan sesudahnya. Ini bukan pilihan gaya. Sensor di lab ini bekerja dengan menganalisis berkas tangkapan, bukan memantau kabel secara langsung. Kalau rekaman baru dimulai setelah serangan, tidak ada data yang bisa dianalisis, dan tahap deteksi otomatis kosong.
 
-Layar kosong selama proses berjalan. Hasilnya masuk ke berkas.
+Selama proses berjalan, layar tidak menampilkan apa pun. Rekaman tetap berjalan, hanya saja hasilnya ditulis ke berkas. Layar kosong bukan berarti gagal.
 
 ---
 
@@ -96,9 +102,13 @@ nmap -sS -sV -p- 192.168.5.5
 
 **Narasi:**
 
-Tahap pertama, pemetaan layanan.
+Tahap pertama adalah pemetaan layanan. Tujuannya sederhana: mengetahui permukaan serangan yang tersisa setelah hardening.
 
-Hasilnya tiga port: 22, 1883, dan 3000. Port 3306, basis data, tidak muncul, meskipun layanannya tetap berjalan.
+Hasilnya tiga port. 22 untuk SSH, 1883 untuk layanan pesan, dan 3000 untuk dashboard. Port 3306, yaitu basis data, tidak muncul sama sekali.
+
+Yang perlu ditegaskan, basis datanya tetap berjalan dan tetap menyimpan seluruh data. Yang berubah hanya keterlihatannya dari jaringan. Dari sisi penyerang, port itu tidak ada. Dari sisi aplikasi, sambungan tetap berjalan normal.
+
+Ini yang membuat pemetaan menjadi langkah penting. Penyerang tidak bisa menyerang apa yang tidak bisa dilihatnya.
 
 ---
 
@@ -116,13 +126,13 @@ sudo fail2ban-client status sshd
 
 **Narasi:**
 
-Tahap kedua, jalur autentikasi.
+Tahap kedua menyasar jalur autentikasi, karena biasanya di situlah jalan masuk paling murah.
 
-Sambungan ke basis data berakhir timeout, bukan refused. Paket dibuang tanpa jawaban.
+Sambungan langsung ke basis data berakhir timeout, bukan refused. Perbedaannya penting. Refused berarti ada layanan yang menjawab dan menolak, sedangkan timeout berarti paketnya dibuang tanpa jawaban. Dari sisi penyerang, tidak ada apa pun di alamat itu.
 
-Percobaan kata sandi SSH berhenti pada negosiasi, karena layanan hanya menerima kunci. Tidak ada kata sandi yang benar-benar diuji.
+Untuk SSH, percobaan tebak kata sandi berhenti pada tahap negosiasi, karena layanan hanya menerima kunci. Tidak ada satu kata sandi pun yang benar-benar diuji. Karena itu kami tidak menyimpulkan apa pun tentang kekuatan kata sandi di mesin ini, dan itu memang bukan bagian dari pengujian kami.
 
-Percobaan berulang dicatat dan diblokir otomatis.
+Di sisi pertahanan, percobaan yang gagal berulang dicatat, lalu alamatnya diblokir otomatis.
 
 ---
 
@@ -140,13 +150,15 @@ curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"
 
 **Narasi:**
 
-Tiga permintaan ini menunjukkan satu hal: masukan dari URL dapat mengubah perintah ke basis data.
+Tahap ketiga menyasar lapisan aplikasi, dan ini temuan utama kami.
 
-Permintaan normal mengembalikan dua baris. Kondisi selalu benar membuka seluruh tabel. Kondisi selalu salah menghasilkan nol.
+Tiga permintaan berikut menunjukkan satu hal: masukan dari URL dapat mengubah perintah yang dikirim ke basis data.
 
-Nol itu yang menutup perdebatan. Bukan tampilan yang berubah, tapi logika query.
+Permintaan normal mengembalikan dua baris, sesuai perangkat yang diminta. Ketika parameternya diubah menjadi kondisi yang selalu benar, seluruh isi tabel terbuka. Ketika diubah menjadi kondisi yang selalu salah, hasilnya kosong.
 
-Keluarannya masih format mentah, sehingga struktur kolom ikut terbaca.
+Hasil kosong itulah yang menutup perdebatan. Kalau hanya kasus pertama yang ditampilkan, masih ada ruang untuk berargumen bahwa itu bug tampilan. Dengan hasil nol pada kasus ketiga, jelas yang berubah adalah logika query, bukan halaman.
+
+Ada kebocoran tambahan. Bentuk keluarannya masih format mentah bahasa pemrograman, sehingga struktur dan tipe kolom ikut terbaca dari luar. Penyerang tidak hanya mendapat isi data, tetapi juga peta tabelnya.
 
 ---
 
@@ -166,13 +178,13 @@ tail -3 /var/log/iot/subscriber.log
 
 Sekarang masuk ke bagian kedua: injeksi data palsu melalui MQTT.
 
-Terminal kiri memantau pesan yang masuk, terminal kanan mengirim pesan palsu. Pesan diterima tanpa autentikasi.
+Terminal kiri memantau seluruh pesan yang masuk, terminal kanan mengirim satu pesan palsu. Pesan langsung diterima tanpa autentikasi dan tanpa penolakan.
 
-Pada mesin target, data tersimpan: sensor-99 dengan suhu 99,9. Sensor itu tidak ada, kami yang membuatnya. Subscriber menerimanya sebagai data valid.
+Pada mesin target, data tersimpan: sensor-99 dengan suhu 99,9. Sensor ini sebenarnya tidak ada, kami yang membuatnya. Namun subscriber menerimanya begitu saja sebagai data valid.
 
-Pada dashboard, baris itu muncul di posisi teratas. Suhu normal sapi sekitar 38 derajat, sehingga penyiram akan terus menyala. Tidak ada tanda bahwa data ini palsu.
+Pada dashboard, baris tersebut muncul di posisi teratas dengan suhu 99,9. Untuk sapi, suhu normal sekitar 38 derajat, sehingga sistem penyiram akan terus menyala. Dashboard juga tidak memberi tanda bahwa data ini palsu, tampilannya identik dengan data asli.
 
-Dampaknya bukan pencurian data, melainkan hilangnya integritas data.
+Dampaknya bukan pencurian data, melainkan hilangnya integritas data. Keputusan yang diambil dari data yang salah akan menghasilkan tindakan yang salah.
 
 Selanjutnya, kita analisis di Security Onion.
 
@@ -191,11 +203,11 @@ sudo so-import-pcap /tmp/pbl5-demo.pcap
 
 **Narasi:**
 
-Setelah serangan selesai, perekaman dihentikan dan berkas dimasukkan ke sensor.
+Setelah rangkaian serangan selesai, perekaman dihentikan. Jumlah paket diperiksa lebih dahulu. Kalau nol, rekaman dianggap gagal dan tidak ada yang bisa dianalisis.
 
-Prosesnya memakan waktu karena berkas dibaca ulang oleh Suricata dan Zeek.
+Berkas tangkapan kemudian dimasukkan ke sensor. Proses ini memerlukan waktu, karena berkas dibaca ulang oleh dua mesin analisis, yaitu Suricata dan Zeek, lalu hasilnya dimasukkan ke basis data pencarian.
 
-Analisis berjalan setelah serangan.
+Konsekuensinya, analisis dalam metode kami berjalan setelah serangan, bukan saat serangan berlangsung. Itu keterbatasan yang kami catat, bukan yang kami sembunyikan.
 
 ---
 
@@ -211,9 +223,15 @@ Analisis berjalan setelah serangan.
 
 **Narasi:**
 
-Hasilnya lalu lintas antara penyerang dan target: port tujuan, jumlah data, dan status koneksi.
+Hasil analisis menampilkan lalu lintas antara mesin penyerang dan mesin target. Yang tercatat adalah bentuk koneksi: port tujuan, jumlah data, dan status penyelesaian. Status yang terbaca menunjukkan koneksi selesai normal, artinya server memang membalas.
 
-Dua batas. Pertama, analisis berjalan setelah serangan. Kedua, yang terekam bentuk lalu lintas, bukan isi serangan. Injeksi pada parameter dan penyisipan pesan tidak dikenali.
+Ada dua batas yang perlu kami sampaikan.
+
+Pertama, karena sensor bekerja dari berkas tangkapan, selalu ada jeda antara serangan dan hasil analisis. Deteksi seperti ini tidak bisa dipakai untuk menghentikan serangan yang sedang berjalan.
+
+Kedua, yang terekam adalah bentuk lalu lintas, bukan isi serangan. Tidak ada aturan yang mengenali injeksi pada parameter URL, dan tidak ada yang mengenali penyisipan pesan. Jadi dua serangan tadi tidak muncul sebagai peringatan, hanya sebagai koneksi yang selesai normal.
+
+Deteksi kami kuat di lapisan jaringan, dan lemah tepat di lapisan yang paling kami sorot. Itu kami catat sebagai kekurangan.
 
 ---
 
@@ -229,11 +247,11 @@ sudo bash /tmp/purple.sh mitigasi
 
 **Narasi:**
 
-Mitigasi pada lapisan aplikasi: hentikan, ganti berkas, jalankan kembali.
+Mitigasi dilakukan pada lapisan aplikasi. Aplikasinya dihentikan lebih dahulu, berkasnya diganti, baru dijalankan kembali.
 
-Harus mati dulu, karena proses yang berjalan menyimpan kode di memori.
+Urutan ini bukan formalitas. Proses yang berjalan menyimpan kode di memori, jadi mengganti berkas saat aplikasi masih hidup tidak mengubah perilakunya. Kami sempat mengalami itu saat latihan: berkasnya sudah benar, tetapi hasil pengujian tetap gagal, karena yang berjalan masih kode lama.
 
-Setelah itu, masukan dikirim sebagai nilai terpisah, keluaran menjadi format terstruktur, dan mode pengembangan dimatikan.
+Setelah penggantian, ada tiga perubahan. Masukan tidak lagi disambung ke dalam query, melainkan dikirim sebagai nilai terpisah, sehingga basis data membacanya sebagai data dan tidak pernah sebagai perintah. Keluarannya diubah menjadi format terstruktur, sehingga struktur tabel tidak lagi terbaca. Dan mode pengembangan dimatikan, supaya pesan kesalahan tidak menampilkan isi internal aplikasi.
 
 ---
 
@@ -250,11 +268,13 @@ curl "http://192.168.5.5:3000/sensor?device=sensor-01"
 
 **Narasi:**
 
-Serangan yang sama diulang tanpa perubahan.
+Untuk membuktikan mitigasi, serangan yang sama diulang tanpa perubahan apa pun.
 
-Hasilnya kosong. Karena serangannya identik, perubahan hanya mungkin berasal dari aplikasi.
+Hasilnya kosong.
 
-Permintaan normal juga diuji, untuk memastikan aplikasi tetap berfungsi.
+Karena serangannya identik, perubahan hasil hanya dapat disebabkan oleh perubahan pada aplikasi. Kalau kami hanya menyatakan sudah dimitigasi, itu klaim. Dengan mengulang serangan yang sama, itu bukti.
+
+Kami juga menguji permintaan normal, untuk memastikan aplikasi tetap berfungsi dan mitigasinya tidak merusak layanan.
 
 ---
 
@@ -266,15 +286,15 @@ Permintaan normal juga diuji, untuk memastikan aplikasi tetap berfungsi.
 
 Kesimpulannya.
 
-Pemetaan layanan tertutup: tersisa tiga port, dan basis data tidak terlihat.
+Pemetaan layanan tertutup. Tersisa tiga port, dan basis data tidak terlihat dari jaringan meski layanannya tetap berjalan.
 
-Jalur autentikasi tertutup: basis data hanya dari dalam mesin, SSH hanya kunci, percobaan berulang diblokir.
+Jalur autentikasi tertutup. Basis data hanya menerima sambungan dari dalam mesin, SSH hanya menerima kunci, dan percobaan berulang diblokir otomatis.
 
-Injeksi pada aplikasi tertutup, terbukti lewat pengulangan serangan.
+Injeksi pada lapisan aplikasi tertutup, dan terbukti melalui pengulangan serangan yang sama.
 
-Penyisipan data melalui layanan pesan belum tuntas. Konfigurasi sudah disiapkan, tetapi belum terbukti berlaku penuh, jadi kami catat sebagai temuan terbuka.
+Penyisipan data melalui layanan pesan belum tuntas. Konfigurasinya sudah disiapkan, tetapi belum terbukti berlaku penuh, sehingga kami catat sebagai temuan terbuka.
 
-Konfigurasi yang belum terbukti bukan mitigasi.
+Kami memilih mencatatnya apa adanya. Konfigurasi yang belum terbukti bukan mitigasi, dan menyebutnya selesai hanya akan menutupi masalah yang masih ada.
 
 Sekian, terima kasih.
 
@@ -282,6 +302,8 @@ Sekian, terima kasih.
 
 # Catatan Produksi
 
-Rekam dua sesi. Sesi pertama Scene 1 sampai 8, sesi kedua Scene 9 sampai 13.
+Rekam dua sesi. Sesi pertama Scene 1 sampai 8, berhenti saat dashboard menampilkan data palsu. Sesi kedua Scene 9 sampai 13. Perekaman di mesin pemantau jangan dihentikan di antara dua sesi.
 
 Jangan dipotong: Scene 3, 7, dan 12.
+
+Boleh dipotong: bagian menunggu pemindaian dan menunggu analisis.
