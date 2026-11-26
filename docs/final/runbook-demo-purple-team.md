@@ -58,9 +58,9 @@ Cek log subscriber, harus ada `menunggu pesan di sensors/#`:
 
 `ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman`
 
-`app.py` harus 806 byte, versi rentan. `app.py.aman` harus 1155 byte, versi aman.
+`app.py` harus 1483 byte, versi rentan dengan halaman tabel. `app.py.aman` harus 1791 byte, versi aman.
 
-Kalau `app.py.aman` juga 806 byte, versi amannya hilang dan sesi mitigasi tidak punya tujuan. Ambil ulang dari repo, berkasnya ada di `docs/final/lampiran-kode/app.py.aman`, lalu pasang dengan `sudo cp`.
+Kalau `app.py.aman` ukurannya sama dengan `app.py`, versi amannya hilang dan sesi mitigasi tidak punya tujuan. Ambil ulang dari repo, berkasnya ada di `docs/final/lampiran-kode/`, lalu pasang dengan `sudo cp`.
 
 ## 0.5 Target, pastikan MQTT terbuka
 
@@ -335,7 +335,7 @@ Yang diucapkan: "Tidak ada kata sandi, tidak ada penolakan. Broker menerima siap
 
 `sudo mysql -u root -p` lalu `USE iot_db;` lalu `SELECT * FROM sensor_readings ORDER BY id DESC LIMIT 3;`
 
-**Di browser VM Attacker,** buka `http://192.168.5.5:3000`. Baris suhu 99.90 muncul di posisi teratas. Angka itu mustahil untuk peternakan sapi perah, dan itulah inti insidennya: data operasional tidak bisa dipercaya lagi.
+**Di browser VM Attacker,** buka `http://192.168.5.5:3000/`. Halaman itu menampilkan tabel pembacaan terbaru, dan baris suhu 99.90 muncul di posisi teratas karena diurutkan dari id terbesar. Angka itu mustahil untuk peternakan sapi perah, dan itulah inti insidennya: data operasional tidak bisa dipercaya lagi.
 
 ## Menit 32-40, mitigasi dan verifikasi
 

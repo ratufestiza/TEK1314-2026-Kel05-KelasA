@@ -1,0 +1,54 @@
+from flask import Flask, request
+import pymysql
+
+app = Flask(__name__)
+
+conf = {}
+with open("/etc/iot/iot.env") as fh:
+    for baris in fh:
+        if "=" in baris:
+            kunci, nilai = baris.strip().split("=", 1)
+            conf[kunci] = nilai
+
+DB = dict(host=conf["DB_HOST"], port=int(conf["DB_PORT"]), user=conf["DB_USER"], password=conf["DB_PASS"], database=conf["DB_NAME"])
+
+
+def ambil(sql):
+    conn = pymysql.connect(**DB)
+    cur = conn.cursor()
+    cur.execute(sql)
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+@app.route("/")
+def index():
+    rows = ambil("SELECT * FROM sensor_readings ORDER BY id DESC LIMIT 20")
+    isi = ""
+    for r in rows:
+        isi += "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (r[0], r[1], r[2], r[3], r[4])
+    return (
+        "<h1>Dashboard IoT PBL5</h1>"
+        "<p>Pembacaan sensor sprinkler peternakan sapi perah</p>"
+        "<table border='1' cellpadding='6'>"
+        "<tr><th>id</th><th>device</th><th>suhu</th><th>kelembapan</th><th>waktu</th></tr>"
+        + isi
+        + "</table>"
+        "<p>Coba /sensor?device=sensor-01</p>"
+    )
+
+
+@app.route("/sensor")
+def sensor():
+    dev = request.args.get("device", "")
+    conn = pymysql.connect(**DB)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM sensor_readings WHERE device_id = '%s'" % dev)
+    rows = cur.fetchall()
+    conn.close()
+    return str(rows)
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
