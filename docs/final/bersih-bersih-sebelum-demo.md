@@ -14,9 +14,21 @@ Cek dulu apa yang masih jalan:
 
 `ps aux | grep -e subscriber -e app.py | grep -v grep`
 
-Kemarin ada tiga subscriber jalan bersamaan. Kalau masih ada:
+Kemarin ada tiga subscriber jalan bersamaan. Kalau masih ada, jangan pakai `killall`, karena `-f` tidak dikenal di image ini dan nama prosesnya `python3` sehingga `killall subscriber` juga tidak menemukan apa pun.
 
-`killall -f subscriber`
+Ambil PID-nya dulu:
+
+`ps -eo pid,cmd | grep subscriber | grep -v grep`
+
+Lalu matikan satu per satu, dari PID terkecil:
+
+`sudo kill <PID>`
+
+Cek ulang, harus kosong:
+
+`ps -eo pid,cmd | grep subscriber | grep -v grep`
+
+Kalau ada yang tetap hidup, ulangi dengan `sudo kill -9 <PID>`.
 
 Kalau Flask-nya nyala dari terminal manual, tutup terminalnya atau `Ctrl+C` di jendela itu.
 

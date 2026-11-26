@@ -105,7 +105,7 @@ Detailnya di Bagian 4b. Ringkasnya: `sudo so-status`, nyalakan Elasticsearch lal
 | Tiga VM nyala | ya | nyalakan, tutup aplikasi host kalau memori kurang |
 | IP `192.168.5.5` | ada | `sudo netplan apply` |
 | Dashboard 3000 | nyala | jalankan ulang dengan `nohup` |
-| Subscriber | satu proses | `killall -f subscriber` lalu jalankan satu |
+| Subscriber | satu proses | matikan pakai `sudo kill <PID>` dari `ps -eo pid,cmd \| grep subscriber`, lalu jalankan satu proses baru |
 | Payload OR | 4 baris | `app.py` bukan versi rentan, tukar |
 | MQTT terbuka | ya | perbaiki `default.conf` |
 | Kibana | kebuka | lanjut tanpa Kibana, jangan buang waktu |
@@ -347,7 +347,19 @@ Catatan penting: subscriber hanya menerima angka polos atau JSON dengan kunci `s
 
 `sudo cp app.py.aman app.py`
 
-`killall -f app.py`
+`ps -eo pid,cmd | grep app.py | grep -v grep`
+
+Catat PID-nya, biasanya proses paling bawah yang `python3 app.py`. Lalu:
+
+`sudo kill <PID>`
+
+Pastikan port sudah lepas:
+
+`ss -tln | grep 3000`
+
+Kalau masih muncul, ulangi dengan `sudo kill -9 <PID>`.
+
+Setelah port lepas, jalankan versi baru:
 
 `sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
 
@@ -491,7 +503,7 @@ Harus muncul `menunggu pesan di sensors/#`.
 # Bagian 6 - Jebakan yang sudah terbukti
 
 1. Alamat localhost di VM Attacker berarti Attacker itu sendiri. Semua serangan memakai `192.168.5.5`.
-2. `pkill` tidak ada di image Target, pakai `killall -f`.
+2. `pkill` tidak ada di image Target. `killall -f` juga tidak dikenal, dan `killall app.py` tidak menemukan apa pun karena nama prosesnya `python3`. Selalu matikan pakai PID: `ps -eo pid,cmd | grep app.py | grep -v grep` lalu `sudo kill <PID>`.
 3. `mosquitto_sub -5` bukan opsi yang sah. Cukup `-t 'sensors/#' -C 1 -W 3`. Hasil `Timed out` berarti koneksi diterima, bukan gagal.
 4. Tanpa baris `listener` di `default.conf`, Mosquitto hanya mendengarkan di loopback dan semua klien jaringan dapat `Connection refused`.
 5. Salinan berkas memakai `cp`, jangan menimpa `app.py.aman` dengan `app.py` yang sedang rentan. Itu yang bikin versi aman hilang kemarin.
@@ -517,7 +529,7 @@ Semua perintah yang dipakai demo, dikelompokkan per mesin. Buka bagian ini kalau
 | cek proses | `ps aux \| grep -e app.py -e subscriber \| grep -v grep` |
 | nyalakan dashboard | `sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &` |
 | nyalakan subscriber | `sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &` |
-| matikan dashboard | `killall -f app.py` |
+| matikan dashboard | `ps -eo pid,cmd \| grep app.py \| grep -v grep` lalu `sudo kill <PID>` |
 | cek versi berkas | `ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman` |
 | tukar ke aman | `sudo cp app.py.aman app.py` |
 | cek MQTT | `cat /etc/mosquitto/conf.d/default.conf` |
