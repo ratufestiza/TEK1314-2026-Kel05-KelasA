@@ -112,13 +112,15 @@ Browser di dalam VM Onion, bukan dari Attacker.
 
 Ini penyebab paling sering kenapa Kibana terlihat kosong padahal impornya berhasil: rentang waktunya terlalu sempit.
 
-**Langkah 4, tambahkan kolom.** Di daftar kolom sebelah kiri, tambahkan `source.ip` dan `destination.ip`. Kalau nama kolomnya berbeda, cari yang memuat `ip`.
+**Langkah 4, tambahkan kolom.** Di daftar kolom sebelah kiri, tambahkan `source_ip` dan `destination_ip`. Nama field memakai garis bawah, bukan titik, karena Security Onion di lab ini versi 16.04. Kalau di versi lain, baru `source.ip`.
 
 **Langkah 5, saring.** Ketik di kotak pencarian:
 
-`source.ip : "192.168.5.100" and destination.ip : "192.168.5.5"`
+`source_ip:"192.168.5.100" and destination_ip:"192.168.5.5"`
 
 Yang akan muncul: lalu lintas dari Attacker ke Target.
+
+Pola indeks yang benar untuk versi ini adalah `*:logstash-*`, pakai titik dua. Itu yang muncul di daftar pola indeks, bukan `logstash` saja.
 
 ---
 
@@ -143,6 +145,47 @@ Jangan mengklaim sensor mendeteksi SQL injection. Tidak ada aturannya di lab ini
 ## Selisih waktu
 
 Kibana memakai UTC, catatan tim memakai WIB. Selisih tujuh jam. Kejadian jam 20.00 WIB akan muncul sebagai 13.00 di Kibana. Jangan dikira sesi berbeda.
+
+---
+
+## Kalau Kibana menampilkan SearchError: unknown error
+
+Ini bukan masalah pcap dan bukan masalah impor. Ini Kibana yang tidak bisa menghubungi Elasticsearch.
+
+Tandanya: muncul spanduk merah `Discover: unknown error`, di bawahnya `SearchError: unknown error`, jumlah hit nol, dan di kiri bawah tertulis `Searching 0/1`.
+
+Urutan penanganannya di konsol Onion:
+
+`sudo so-status`
+
+Cari baris `elasticsearch`. Kalau `stopped`:
+
+`sudo so-elasticsearch-start`
+
+Tunggu dua menit, lalu tes:
+
+`curl -s localhost:9200/_cat/indices?v | head`
+
+Kalau keluar daftar indeks, Elasticsearch hidup. Kalau `Connection refused`, dia masih mati dan impor tidak ada gunanya.
+
+Kalau Elasticsearch hidup tapi Kibana tetap error:
+
+`sudo so-kibana-restart`
+
+Baru setelah Kibana bisa membuka Discover, jalankan impor.
+
+---
+
+## Versi yang dipakai di lab ini
+
+Security Onion di lab ini versi lama, 16.04. Perbedaannya berpengaruh ke dua hal:
+
+| Hal | Versi ini | Versi baru |
+| --- | --- | --- |
+| Pola indeks | `*:logstash-*` | `logs-*` |
+| Nama field | `source_ip` | `source.ip` |
+
+Jadi kalau mengetik filter, pakai garis bawah. Kalau memilih pola indeks, pakai yang ada titik duanya.
 
 ---
 
