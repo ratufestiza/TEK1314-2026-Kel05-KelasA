@@ -96,9 +96,33 @@ Tes sekali koneksi ke target:
 
 Harus keluar dua baris.
 
-## 0.8 Onion, nyalakan Kibana
+## 0.8 Onion, nyalakan Kibana dan mulai merekam
 
-Detailnya di Bagian 4b. Ringkasnya: `sudo so-status`, nyalakan Elasticsearch lalu Kibana, tunggu, buka `https://localhost` di browser dalam VM Onion.
+Ini dua pekerjaan terpisah, dan yang kedua sering kelupaan. Kerjakan **sebelum** penonton masuk.
+
+**Pertama, nyalakan layanan.** Di VM Onion: `sudo so-status`, nyalakan Elasticsearch lalu Kibana, tunggu, buka `https://localhost` di browser dalam VM Onion. Detailnya di Bagian 4b.
+
+**Kedua, mulai merekam paket.** Ini yang bikin Kibana ada isinya nanti.
+
+Di VM Onion, buka terminal baru:
+
+`ip -br a`
+
+Cari antarmuka yang punya alamat `192.168.5.200`. Misalnya `eth2`, pakai nama itu di perintah berikut.
+
+`sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap -U`
+
+Biarkan terminalnya terbuka selama demo. Jangan ditutup, jangan `Ctrl+C` sampai serangan selesai.
+
+Keterangan tiap bagian: `-i` antarmuka segmen, `-n` jangan ubah alamat jadi nama, `-w` tulis ke berkas, `-U` tulis langsung ke disk supaya data tidak hilang kalau VM mati mendadak.
+
+**Kenapa harus sekarang, bukan nanti.** Sensor berjalan mode import. Yang dianalisis adalah berkas tangkapan, bukan arus langsung. Kalau merekam setelah serangan, paketnya sudah lewat dan tidak ada yang bisa diimpor.
+
+**Cek rekamannya jalan.** Biarkan tcpdump jalan, lalu dari VM Attacker:
+
+`curl -s -m 5 "http://192.168.5.5:3000/sensor?device=sensor-01"`
+
+Di terminal tcpdump harus muncul baris lalu lintas port 3000. Kalau tidak muncul, antarmukanya salah. Ganti nama antarmuka dan ulangi.
 
 ## 0.9 Tabel go atau no-go
 
