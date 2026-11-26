@@ -433,19 +433,17 @@ curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"
 
 **Narasi:**
 
-Nah ini bagian yang paling penting, lapisan aplikasinya.
+Nah tiga command ini gunanya buat nunjukin satu hal: input dari URL bisa ngubah perintah yang dikirim ke database.
 
-Pertama kita lakuin yang normal dulu, nanya data sensor-01. Hasilnya dua baris. Bener, enggak ada yang aneh.
+Yang pertama, permintaan normal, keluar dua baris.
 
-Sekarang kita masukin payload. %27 itu tanda kutip, %20 itu spasi, jadi kalau dibaca isinya x' OR '1'='1. Hasilnya empat baris, semua isi tabel keluar.
+Yang kedua kita kasih kondisi yang selalu benar, semua isi tabel kebuka.
 
-Kenapa bisa? Karena aplikasinya nyambungin input kita langsung ke dalam query. Jadi tanda kutipnya nutup string, terus OR '1'='1' itu dibaca sebagai perintah, bukan sebagai nama perangkat.
+Yang ketiga kita kasih kondisi yang selalu salah, hasilnya kosong.
 
-Terus yang ketiga kita ganti jadi AND '1'='2'. Hasilnya nol.
+Kalau cuma yang kedua doang, masih bisa dibilang bug tampilan. Tapi begitu yang ketiga hasilnya nol, jelas ini logika query-nya yang berubah, bukan tampilannya.
 
-Nah tiga hasil ini yang mau saya tunjukin. Dua, empat, nol. Kalau cuma nunjukin yang OR doang, bisa dibilang kebetulan. Tapi begitu AND hasilnya nol, enggak bisa dibilang kebetulan lagi. Berarti beneran logika query-nya yang kita ubah.
-
-Satu lagi, coba perhatiin bentuk outputnya. Bukan JSON, tapi format mentah Python. Jadi urutan sama tipe kolomnya ikut kebaca dari luar.
+Dan karena outputnya masih format mentah Python, struktur tabelnya juga ikut kebaca dari luar.
 
 Kalau sudah, kita lanjut ke bagian MQTT.
 
