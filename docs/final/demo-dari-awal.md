@@ -171,7 +171,15 @@ Di VM AYAM, satu perintah:
 
 `sudo bash /tmp/purple.sh mitigasi`
 
-Skrip itu mematikan proses dulu, baru menimpa berkas, baru menyalakan ulang. Urutan ini penting. Kalau berkas ditimpa sambil aplikasi masih jalan, Python tetap memakai kode lama di memori dan verifikasi akan gagal padahal berkasnya sudah benar.
+Skrip itu mengerjakan dua bagian sekaligus.
+
+Bagian aplikasi: matikan proses dulu, timpa berkas dengan versi aman, lalu nyalakan ulang. Urutan ini penting. Kalau berkas ditimpa sambil aplikasi masih jalan, Python tetap memakai kode lama di memori dan verifikasi akan gagal padahal berkasnya sudah benar.
+
+Bagian broker: pindahkan `pb15-awal.conf` keluar dari folder konfigurasi, buat akun `sensor`, tulis ulang `default.conf` dengan akses anonim dimatikan, jalankan ulang layanan, lalu sisipkan kredensial ke `subscriber.py` dan nyalakan ulang subscriber.
+
+Langkah memindahkan berkas lama itu wajib lebih dulu. Berkas itu dibaca terakhir oleh Mosquitto, jadi selama masih di tempatnya, `allow_anonymous false` tidak akan berlaku.
+
+Kalau skrip tidak dipakai, langkah manualnya ada di `mitigasi-langkah-demi-langkah.md`.
 
 Hasil di akhir harus `mode AMAN`.
 
@@ -185,7 +193,23 @@ Di VM Attacker, ulangi payload yang sama persis:
 
 Hasil yang benar: JSON dengan `"jumlah": 0`.
 
-Yang diucapkan: "Payload sama, hasil nol. Yang berubah bukan serangannya, tapi cara aplikasi memperlakukan masukan."
+Uji normal tetap jalan:
+
+`curl "http://192.168.5.5:3000/sensor?device=sensor-01"`
+
+Harus tetap dua baris `sensor-01` dalam bentuk JSON.
+
+Uji MQTT, perintah yang sama seperti saat menyerang:
+
+`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m 99.90`
+
+Hasil yang benar: `Connection Refused: not authorised`.
+
+Terakhir, pastikan data sah masih tercatat:
+
+`tail -3 /var/log/iot/subscriber.log`
+
+Yang diucapkan: "Payload sama, hasil nol. Yang berubah bukan serangannya, tapi cara aplikasi memperlakukan masukan. Untuk pesan, pengirim yang sama sekarang ditolak broker, karena tidak lagi punya identitas."
 
 ---
 
@@ -222,7 +246,7 @@ Set rentang waktu ke 1 jam terakhir. Data baru muncul setelah impor, bukan sebel
 1. Skenario 1 tertutup oleh pembatasan port.
 2. Skenario 2 tertutup oleh MySQL loopback, SSH kunci, dan fail2ban.
 3. Skenario 3a tertutup oleh parameterized query, terbukti lewat pengulangan payload.
-4. Skenario 3b dicatat sebagai temuan terbuka. Autentikasi broker sudah disiapkan tetapi belum terbukti berlaku penuh.
+4. Skenario 3b tertutup setelah berkas konfigurasi lama dipindahkan. Publish anonim ditolak, dan data sah tetap tercatat karena subscriber diberi kredensial. Sebut juga bahwa percobaan pertama gagal karena berkas lama itu, dan kegagalannya tercatat di laporan.
 5. Deteksi berjalan dalam mode import, sehingga ada jeda antara serangan dan hasil analisis. Itu keterbatasan yang dicatat, bukan disembunyikan.
 
 ---

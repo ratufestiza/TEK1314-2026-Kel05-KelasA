@@ -251,10 +251,15 @@ Dampaknya bukan pencurian data, tapi rusaknya kepercayaan pada data operasional.
 | --- | --- | --- |
 | Query jadi parameterized | `app.py` | memisahkan perintah dan data, menutup injeksi di akarnya |
 | Keluaran jadi JSON | `app.py` | repr tuple membocorkan urutan kolom dan tipe data |
-| Debug dimatikan | `app.py` | halaman galat membocorkan struktur internal |
-| Autentikasi broker | `default.conf` | klien tanpa identitas tidak boleh menulis data |
+| Nilai disandikan di HTML | `app.py` | mencegah penyisipan penanda HTML lewat data sensor |
+| Petunjuk endpoint dihapus | `app.py` | tidak memberi contoh parameter yang bisa diuji |
+| Akses anonim dimatikan | `default.conf` | klien tanpa identitas tidak boleh menulis data |
+| Berkas konfigurasi lama dipindah | `pb15-awal.conf` | berkas itu dibaca terakhir dan menimpa konfigurasi baru |
+| Subscriber diberi kredensial | `subscriber.py` | agar aliran data yang sah tidak ikut terputus |
 
-Yang **tidak** diklaim selesai: skenario 3b belum tuntas. Konfigurasi aman untuk broker sudah disiapkan tetapi belum dipastikan berlaku penuh. Di laporan ini dicatat sebagai temuan terbuka, bukan dinyatakan beres. Jangan menutupinya saat demo.
+Dua yang terakhir adalah syarat, bukan tambahan. Tanpa memindahkan berkas lama, `allow_anonymous false` tidak berlaku. Tanpa memberi kredensial pada subscriber, penutupan akses anonim justru menghentikan aliran data.
+
+Catatan riwayat: pada sesi 25 November, langkah memindahkan berkas lama belum dijalankan, sehingga broker masih menerima klien anonim dan butir ini tercatat terbuka di `incident_report.md`. Tindak lanjut pada 27 November menyelesaikannya: berkas dipindahkan, akun `sensor` dibuat, dan publish anonim ditolak dengan `not authorised`. Yang disampaikan saat demo adalah kondisi setelah tindak lanjut, dengan riwayat kegagalannya tetap disebut.
 
 ---
 
@@ -411,6 +416,78 @@ Kalau masih keluar baris data, berarti proses lama masih hidup. Cek `ss -tln | g
 
 Yang diucapkan: "Payload sama, hasil nol. Yang berubah bukan serangannya, tapi cara aplikasi memperlakukan masukan."
 
+**Langkah 4, tutup akses anonim pada broker. Lihat dulu isi folder konfigurasi:**
+
+`ls /etc/mosquitto/conf.d`
+
+**Langkah 5, pindahkan berkas lama keluar dari folder itu.** Ini langkah yang menentukan, karena berkas lama dibaca terakhir dan menimpa konfigurasi baru:
+
+`sudo mv /etc/mosquitto/conf.d/pb15-awal.conf /root/pb15-awal.conf.nonaktif`
+
+**Langkah 6, buat akun untuk perangkat sensor:**
+
+`sudo mosquitto_passwd -c -b /etc/mosquitto/passwd sensor 'SensorPBL5!2026'`
+
+`sudo chown mosquitto:mosquitto /etc/mosquitto/passwd`
+
+`sudo chmod 640 /etc/mosquitto/passwd`
+
+**Langkah 7, tulis konfigurasi broker.** Pakai nano, jangan sed:
+
+`sudo nano /etc/mosquitto/conf.d/default.conf`
+
+Isinya tiga baris:
+
+```
+listener 1883 0.0.0.0
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+```
+
+Simpan `Ctrl+O` Enter, keluar `Ctrl+X`. Lalu jalankan ulang:
+
+`sudo systemctl restart mosquitto`
+
+**Langkah 8, uji dari dalam mesin dulu, sebelum diuji dari Attacker:**
+
+`mosquitto_pub -h 127.0.0.1 -t uji/anonim -m 1`
+
+Harus `Connection Refused: not authorised`. Kalau perintahnya diam alias sukses, berkas lama belum pindah.
+
+**Langkah 9, beri kredensial pada subscriber.** Subscriber selama ini konek tanpa identitas, jadi dia ikut ditolak. Tambahkan satu baris sebelum `c.connect(...)`:
+
+`sudo nano /opt/iot-dashboard/subscriber.py`
+
+```
+c.username_pw_set("sensor", "SensorPBL5!2026")
+```
+
+Matikan subscriber lama, lalu nyalakan ulang:
+
+`ps -eo pid,args | grep "python3 subscriber.py"`
+
+`sudo kill <PID>`
+
+`sudo -b nohup python3 subscriber.py > /var/log/iot/subscriber.log 2>&1 &`
+
+Kalau `/var/log/iot` masih milik root, ganti dulu pemiliknya sekali saja:
+
+`sudo chown -R fattih:fattih /var/log/iot`
+
+**Di VM Attacker, uji MQTT yang sama seperti saat menyerang:**
+
+`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m 99.90`
+
+Hasil yang diharapkan: `Connection Refused: not authorised`.
+
+Kalau masih diterima, berarti `allow_anonymous` masih aktif. Cek dengan `sudo grep -r allow_anonymous /etc/mosquitto`.
+
+**Terakhir, pastikan data sah masih masuk:**
+
+`tail -3 /var/log/iot/subscriber.log`
+
+Kalau kosong padahal ada publish dari sensor, berarti subscriber belum memakai kredensial. Ini penting: sistem yang aman karena aliran datanya mati bukan mitigasi, tapi gangguan.
+
 ## Menit 40-45, penutup
 
 Sebutkan apa adanya:
@@ -418,9 +495,9 @@ Sebutkan apa adanya:
 1. Skenario 1 tertutup oleh pembatasan port.
 2. Skenario 2 tertutup oleh MySQL loopback, SSH kunci, dan fail2ban.
 3. Skenario 3a tertutup oleh parameterized query, terbukti lewat pengulangan payload.
-4. Skenario 3b belum tuntas. Autentikasi broker sudah disiapkan tetapi belum dipastikan berlaku penuh. Ini dicatat terbuka di laporan.
+4. Skenario 3b tertutup setelah berkas konfigurasi lama dipindahkan. Publish anonim dari Attacker ditolak. Disebutkan juga bahwa percobaan pertama gagal karena berkas itu, dan kegagalan itu tercatat di laporan.
 
-Kalau ditanya kenapa masih terbuka: "Karena kami memilih mencatat apa adanya daripada mengklaim selesai. Konfigurasi yang belum terbukti berlaku bukan mitigasi."
+Kalau ditanya kenapa dulu gagal: "Karena konfigurasi baru ditulis, tapi berkas lama dari Oktober dibaca terakhir dan menang. Pelajarannya, yang harus diperiksa nilai efektifnya, bukan isi berkas yang baru kita tulis."
 
 ---
 

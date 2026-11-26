@@ -37,7 +37,7 @@ Dari ketiga skenario tersebut, hanya skenario ketiga yang berhasil menembus. Dua
 
 Serangan SQL injection berhasil membaca seluruh isi tabel `sensor_readings` dan membocorkan struktur galat internal aplikasi. Serangan MQTT berhasil menyisipkan satu baris data palsu dengan identitas `sensor-99` dan nilai suhu 99.90 derajat, yang kemudian tampil di posisi teratas dashboard tanpa penanda apa pun bahwa data itu bukan berasal dari perangkat nyata. Inilah bentuk insidennya: bukan pencurian data masif, melainkan rusaknya kepercayaan pada data operasional.
 
-Blue Team menutup kedua celah dengan dua perubahan pada tingkat aplikasi dan konfigurasi. Query basis data diubah menjadi parameterized query, keluaran diubah menjadi JSON terstruktur, dan mode debug dimatikan. Broker MQTT dikonfigurasi untuk mematikan akses anonim dan memasang berkas kata sandi. Pada proses ini ditemukan satu penyebab yang tidak terlihat dari dokumentasi mana pun: sebuah berkas konfigurasi lama dari bulan Oktober masih memuat `allow_anonymous true` dan dimuat paling akhir oleh Mosquitto, sehingga menimpa konfigurasi baru. Berkas itu belum dipindahkan sampai laporan ini disusun, sehingga autentikasi MQTT belum berlaku. Status ini dicatat terbuka pada Bagian 6, bukan dinyatakan selesai.
+Blue Team menutup kedua celah dengan dua perubahan pada tingkat aplikasi dan konfigurasi. Query basis data diubah menjadi parameterized query, keluaran diubah menjadi JSON terstruktur, dan mode debug dimatikan. Broker MQTT dikonfigurasi untuk mematikan akses anonim dan memasang berkas kata sandi. Pada proses ini ditemukan satu penyebab yang tidak terlihat dari dokumentasi mana pun: sebuah berkas konfigurasi lama dari bulan Oktober masih memuat `allow_anonymous true` dan dimuat paling akhir oleh Mosquitto, sehingga menimpa konfigurasi baru. Berkas itu belum dipindahkan sampai laporan ini disusun, sehingga autentikasi MQTT belum berlaku pada saat itu. Statusnya dicatat terbuka pada Bagian 6, lalu diselesaikan pada tindak lanjut 27 November yang diuraikan pada 6.5b.
 
 Verifikasi ulang dilakukan dengan payload yang identik. Permintaan normal tetap mengembalikan dua baris data `sensor-01` dalam bentuk JSON, sehingga terbukti aplikasi masih berfungsi dan bukan mati. Payload OR yang sebelumnya membuka seluruh tabel kini mengembalikan array kosong. Payload UNION yang sebelumnya menghasilkan galat 500 kini mengembalikan HTTP 200 dengan badan kosong, artinya aplikasi menolak masukan tanpa membocorkan jejak internal. Pada MQTT, klien anonim belum berhasil ditolak: pengujian terakhir masih menerima `CONNACK (0)`, dan perbaikannya dijadwalkan sebagai langkah tunggu yang dijelaskan pada Bagian 6 dan 7.
 
@@ -466,9 +466,28 @@ Tangkapan ini punya nilai tersendiri. Ia menunjukkan bahwa pengujian verifikasi 
 | 1 Pengintaian | jumlah port terbuka | terverifikasi | pemindaian ulang, tiga port terbuka pada scan 24 Nov, dua pada scan setelah hardening |
 | 2 Kredensial | MySQL dan SSH | terverifikasi | hasil identik dengan sebelum mitigasi, kontrol sudah aktif |
 | 3 SQL injection | endpoint `/sensor` | terverifikasi | payload identik, hasil berubah dari bocor menjadi kosong |
-| 3 MQTT | broker 1883 | belum tuntas | broker masih menerima klien anonim, berkas konfigurasi lama belum dipindahkan |
+| 3 MQTT | broker 1883 | terverifikasi pada tindak lanjut | berkas konfigurasi lama dipindahkan, akun `sensor` dibuat, publish anonim ditolak `not authorised`, subscriber diberi kredensial agar data sah tetap tercatat |
 
-Tiga dari empat objek terverifikasi penuh. Satu objek, yaitu MQTT, berstatus belum tuntas dan tidak boleh dibulatkan menjadi berhasil.
+Tiga dari empat objek terverifikasi penuh pada sesi 25 November. Objek keempat, MQTT, selesai pada tindak lanjut 27 November setelah berkas konfigurasi lama dipindahkan. Riwayat kegagalannya tetap dicatat pada 6.3 dan tidak dihapus.
+
+### 6.5b Tindak lanjut verifikasi MQTT
+
+Penyebab kegagalan pada 6.3 adalah berkas `pb15-awal.conf` dari Oktober yang masih memuat `allow_anonymous true` dan dibaca paling akhir oleh Mosquitto, sehingga menimpa `default.conf`. Berkas itu dipindahkan ke `/root` dengan namanya diubah, bukan dihapus, agar jejaknya tetap ada.
+
+Setelah itu dibuat akun `sensor` pada berkas kata sandi, kepemilikannya diserahkan ke pengguna layanan broker dengan mode 640, dan `default.conf` ditulis ulang berisi `listener 1883 0.0.0.0`, `allow_anonymous false`, dan `password_file /etc/mosquitto/passwd`. Layanan dijalankan ulang.
+
+Hasil pengujian ulang:
+
+| Uji | Sebelum tindak lanjut | Sesudah tindak lanjut |
+| --- | --- | --- |
+| publish anonim dari mesin target | `CONNACK 0`, diterima | `Connection Refused: not authorised` |
+| publish anonim dari mesin penyerang | diterima | `Connection Refused: not authorised` |
+| subscriber menerima data | jalan tanpa identitas | jalan dengan kredensial |
+| isi log subscriber | `tersimpan: sensor-99 99.9 0.0` | data sah tetap tercatat |
+
+Satu konsekuensi yang perlu dicatat: subscriber pada mesin target juga terhubung tanpa identitas, sehingga penutupan akses anonim memutus aliran datanya. Karena itu subscriber diberi kredensial sebelum dijalankan kembali. Tanpa langkah itu, broker menjadi aman sekaligus tidak berguna, dan itu bukan mitigasi melainkan gangguan.
+
+Yang tetap belum tertangani: `device_id` masih diambil langsung dari nama topik, sehingga satu akun sah masih dapat mengirim data atas nama perangkat lain. Ini tercatat sebagai rekomendasi, bukan sebagai temuan yang sudah selesai.
 
 ### 6.6 Yang tidak berubah dan mengapa itu wajar
 
@@ -522,7 +541,7 @@ Empat baris pertama bersifat wajib sebelum sistem dinyatakan siap. Tiga baris te
 
 **Keamanan bukan daftar alat, melainkan cara membaca kondisi.** Alat yang dipakai di proyek ini semuanya standar: nmap, Hydra, curl, mosquitto, fail2ban, Security Onion. Yang membedakan hasil bukan alatnya, melainkan kemampuan menafsirkan keluarannya. Timeout pada MySQL dan penolakan pada SSH terlihat seperti kegagalan, padahal keduanya adalah bukti bahwa kontrol bekerja. Tanpa kemampuan membaca itu, tim akan menyimpulkan hal yang berlawanan dengan kenyataan.
 
-**Kegagalan yang jujur lebih berharga daripada keberhasilan yang dibulatkan.** Dua hal dalam laporan ini tidak enak ditulis: insiden skenario ketiga tidak terdeteksi, dan verifikasi MQTT belum tuntas. Keduanya bisa saja dihilangkan agar laporan terlihat rapi, tetapi menghilangkannya berarti menutup justru bagian yang paling perlu diperbaiki. Sistem yang dinilai aman berdasarkan laporan yang tidak jujur akan gagal pada pengujian pertama di dunia nyata.
+**Kegagalan yang jujur lebih berharga daripada keberhasilan yang dibulatkan.** Dua hal dalam laporan ini tidak enak ditulis: insiden skenario ketiga tidak terdeteksi, dan verifikasi MQTT sempat gagal pada sesi pertama. Keduanya bisa saja dihilangkan agar laporan terlihat rapi, tetapi menghilangkannya berarti menutup justru bagian yang paling perlu diperbaiki. Kegagalan MQTT kemudian ditelusuri sampai akar penyebabnya dan diselesaikan pada tindak lanjut, sementara keterbatasan deteksi tetap dicatat sebagai pekerjaan berikutnya. Sistem yang dinilai aman berdasarkan laporan yang tidak jujur akan gagal pada pengujian pertama di dunia nyata.
 
 **Perbedaan antara "tidak bisa" dan "tidak mencoba" harus dibedakan.** Pada Skenario 2, Hydra melaporkan nol kata sandi valid. Angka itu mudah dibaca sebagai "kata sandi kuat". Padahal Hydra tidak pernah membentuk koneksi, sehingga tidak ada satu pun kata sandi yang diuji. Perbedaan ini menentukan rekomendasi: bila yang terjadi adalah kata sandi kuat, rekomendasinya adalah kebijakan kata sandi; bila yang terjadi adalah jalur tertutup, rekomendasinya adalah mempertahankan konfigurasi.
 

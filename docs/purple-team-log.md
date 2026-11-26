@@ -50,7 +50,9 @@ Target: dashboard pada 3000 dan broker pada 1883. Skenario inilah yang mengisi p
 |---|---|---|---|
 | 1 Reconnaissance | berhasil memetakan, tiga port terbuka | tetap tiga pada scan 24 Nov, dua pada scan setelah hardening | tertutup sebagai kontrol, bukan perbaikan baru |
 | 2 Exploitation | gagal sejak awal | gagal lagi dengan cara sama | tertutup, kontrol sudah aktif sebelum insiden |
-| 3 Web dan MQTT | berhasil, dampak nyata | SQL injection tertutup, MQTT belum tuntas | sebagian tertutup, satu butir verifikasi menyusul |
+| 3 Web dan MQTT | berhasil, dampak nyata | SQL injection tertutup, MQTT tertutup pada tindak lanjut | tertutup, diverifikasi ulang dengan perintah yang sama |
+
+Tindak lanjut 27 November 2026: kegagalan verifikasi MQTT pada Tahap 5 disebabkan berkas `pb15-awal.conf` dari Oktober yang masih memuat `allow_anonymous true` dan dibaca terakhir oleh Mosquitto. Berkas itu dipindahkan ke `/root`, akun `sensor` dibuat, dan `default.conf` ditulis ulang dengan `allow_anonymous false`. Uji publish anonim kemudian ditolak dengan `not authorised`. Subscriber ikut diberi kredensial agar aliran data yang sah tidak terputus. Baris tabel di atas sudah memakai status setelah tindak lanjut; catatan kegagalan aslinya tetap ada di Tahap 5.
 
 ## Catatan kejujuran data
 

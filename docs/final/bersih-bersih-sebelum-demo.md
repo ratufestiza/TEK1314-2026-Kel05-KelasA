@@ -82,7 +82,7 @@ Kalau nggak mau, lewati saja. Yang penting saat demo, lu sebut saja rentang wakt
 
 Ini yang tadi sudah diset, cuma perlu dipastikan sekali lagi.
 
-Ukuran berkas aplikasi, versi rentan 806 byte:
+Ukuran berkas aplikasi, versi rentan 1483 byte dan versi aman 1791 byte:
 
 `ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman`
 

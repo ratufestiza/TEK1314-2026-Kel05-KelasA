@@ -106,6 +106,10 @@ MQTT
   hijau "  perintah unban dijalankan"
 
   echo "[6] nyalakan aplikasi"
+  if [ -f "$DIR/subscriber.py.asli" ]; then
+    cp "$DIR/subscriber.py.asli" "$DIR/subscriber.py"
+    hijau "  subscriber.py dikembalikan ke versi tanpa kredensial"
+  fi
   nyalakan
   if tunggu_port; then hijau "  port 3000 hidup"; else merah "  port 3000 tidak hidup, lihat $LOG/dashboard.log"; fi
 

@@ -106,7 +106,8 @@
 - **Update 25 November 2026:**
   - Payload yang sama diulang dari mesin yang sama. Permintaan normal tetap mengembalikan dua baris dalam bentuk JSON, sehingga aplikasi terbukti masih hidup.
   - Payload OR mengembalikan array kosong. Payload UNION mengembalikan HTTP 200 dengan badan kosong, bukan lagi galat 500.
-  - Verifikasi MQTT tidak berhasil: publish dari mesin target dijawab `CONNACK 0`, artinya broker hidup dan masih menerima klien anonim.
+  - Verifikasi MQTT tidak berhasil pada sesi ini: publish dari mesin target dijawab `CONNACK 0`, artinya broker hidup dan masih menerima klien anonim.
+  - **Tindak lanjut 27 November 2026:** penyebabnya berkas `pb15-awal.conf` dari Oktober yang dibaca terakhir dan menimpa `allow_anonymous false`. Berkas itu dipindahkan ke `/root`, akun `sensor` dibuat, konfigurasi ditulis ulang, dan publish anonim kini ditolak dengan `not authorised`. Subscriber diberi kredensial agar aliran data tetap jalan.
   - Tangkapan lalu lintas sesi verifikasi menghasilkan 45 paket.
   - Lima belas sel `docs/purple-team-log.md` selesai diisi, termasuk sel yang mencatat kegagalan.
   - `docs/final/incident_report.pdf` disusun mengikuti NIST SP 800-61r2, delapan bagian, 25 halaman.

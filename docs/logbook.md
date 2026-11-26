@@ -14,7 +14,7 @@ Logbook ini mencatat progres per pekan beserta artefaknya. Tanggal mengikuti pek
 | Logging Check | 5 | Security Onion bisa merekam ping dan trafik | Lulus |
 | Hardening Review | 7 | Sistem sudah diamankan sebelum diserang | Lulus |
 | Checkpoint Fase 2 | 9 | Rencana serangan dan deklarasi tech stack siap | Lulus, dibahas di Pertemuan 9 |
-| Siklus Purple Team | 11 | Serangan, deteksi, mitigasi, verifikasi tercatat | Lulus sebagian, MQTT belum tuntas |
+| Siklus Purple Team | 11 | Serangan, deteksi, mitigasi, verifikasi tercatat | Lulus, MQTT tuntas pada tindak lanjut |
 | Final | 13 | Incident report, video, slide, repositori | Laporan dan slide selesai, video menyusul |
 
 ## Minggu 1 sampai 2, 24 Agustus 2026: Fase Setup
@@ -113,7 +113,8 @@ Target: membuktikan perbaikan berlaku, lalu menyusun laporan dan bahan presentas
 
 - Payload yang sama diulang dari mesin yang sama. Permintaan normal tetap mengembalikan dua baris dalam bentuk JSON, sehingga aplikasi terbukti masih hidup.
 - Payload OR mengembalikan array kosong. Payload UNION mengembalikan HTTP 200 dengan badan kosong, bukan lagi galat 500.
-- Verifikasi MQTT tidak berhasil. Publish dari mesin target dijawab `CONNACK 0`, artinya broker hidup dan masih menerima klien anonim.
+- Verifikasi MQTT tidak berhasil pada sesi ini. Publish dari mesin target dijawab `CONNACK 0`, artinya broker hidup dan masih menerima klien anonim.
+- **Tindak lanjut 27 November 2026.** Penyebabnya berkas `pb15-awal.conf` dari Oktober yang dibaca terakhir dan menimpa `allow_anonymous false`. Berkas itu dipindahkan ke `/root`, akun `sensor` dibuat, konfigurasi ditulis ulang, dan publish anonim kini ditolak dengan `not authorised`. Subscriber diberi kredensial agar aliran data tetap jalan.
 - Tangkapan lalu lintas sesi verifikasi menghasilkan 45 paket.
 - Lima belas sel `docs/purple-team-log.md` selesai diisi, termasuk sel yang mencatat kegagalan.
 - `docs/final/incident_report.pdf` disusun mengikuti NIST SP 800-61r2, delapan bagian, 25 halaman.
@@ -125,4 +126,4 @@ Target: membuktikan perbaikan berlaku, lalu menyusun laporan dan bahan presentas
 
 Semua akses hanya ke VM Target kelompok sendiri, sesuai aturan keterlibatan. Tidak ada pemindaian ke jaringan kampus, WiFi publik, atau infrastruktur lab.
 
-Kegagalan dicatat sebagai kegagalan. Dua hal yang masih terbuka sampai akhir: serangan lapisan aplikasi tidak terdeteksi oleh sensor, dan autentikasi MQTT belum berlaku meski konfigurasinya sudah ditulis. Keduanya masuk bagian rekomendasi, bukan dihilangkan dari catatan.
+Kegagalan dicatat sebagai kegagalan. Dua hal yang masih terbuka sampai akhir: serangan lapisan aplikasi tidak terdeteksi oleh sensor, dan identitas perangkat masih diambil mentah dari nama topik. Autentikasi MQTT sendiri sudah tuntas pada tindak lanjut 27 November: berkas konfigurasi lama dipindahkan, publish anonim ditolak, dan data sah tetap tercatat. Yang belum tertutup adalah pemalsuan identitas oleh akun yang sah, dan itu masuk bagian rekomendasi, bukan dihilangkan dari catatan.

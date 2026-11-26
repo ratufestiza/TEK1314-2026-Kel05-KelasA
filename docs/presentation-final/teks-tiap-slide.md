@@ -160,10 +160,10 @@ Mengikuti kisi-kisi Bagian VII Panduan PBL Minggu 14-15. Tujuh komponen wajib, t
 | Serang | payload OR mengembalikan empat baris, seluruh isi tabel. Payload UNION galat 500 dengan jejak internal. Publish MQTT diterima dengan `CONNACK 0` |
 | Deteksi | tidak terdeteksi. Kibana hanya mencatat alert ICMP, tanpa signature untuk payload URL maupun pesan MQTT |
 | Analisis | akar masalah sama: masukan dari jaringan dipercaya sepenuhnya. Query digabung dengan format string, dan `device_id` diambil mentah dari nama topik |
-| Mitigasi | parameterized query, keluaran JSON, mode debug mati. Broker memakai `allow_anonymous false` dan berkas kata sandi |
-| Verifikasi | payload OR menghasilkan array kosong, payload UNION menghasilkan HTTP 200 dengan badan kosong. MQTT belum tuntas, broker masih menerima klien anonim |
+| Mitigasi | parameterized query, keluaran JSON, nilai disandikan di HTML. Broker memakai `allow_anonymous false` dan berkas kata sandi, berkas konfigurasi lama dipindahkan, subscriber diberi kredensial |
+| Verifikasi | payload OR menghasilkan array kosong, payload UNION menghasilkan HTTP 200 dengan badan kosong. Publish MQTT anonim ditolak dengan `not authorised`, data sah tetap tercatat |
 
-**Keterangan pembicara:** Bagian MQTT harus disampaikan apa adanya. Konfigurasi sudah benar tetapi tertimpa berkas lama `pb15-awal.conf` dari bulan Oktober yang masih memuat `allow_anonymous true`.
+**Keterangan pembicara:** Bagian MQTT disampaikan dengan riwayatnya. Percobaan pertama gagal karena berkas `pb15-awal.conf` dari Oktober masih memuat `allow_anonymous true` dan dibaca terakhir. Setelah berkas itu dipindahkan, autentikasi berlaku dan publish anonim ditolak. Jangan menyebut MQTT masih terbuka, karena kondisinya sudah tertutup.
 
 ---
 
