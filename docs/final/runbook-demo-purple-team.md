@@ -1,5 +1,7 @@
 # Runbook Demo Purple Team - Besok
 
+Sebelum menjalankan berkas ini, selesaikan dulu `bersih-bersih-sebelum-demo.md`. Berkas itu membersihkan sisa rekaman kemarin. Berkas ini dipakai saat demo berlangsung.
+
 Tujuan: mengembalikan Target Node ke kondisi rentan supaya tiga skenario bisa diperagakan ulang, tanpa menyentuh sepuluh kontrol hardening Fase 1.
 
 Kondisi sekarang: dashboard sudah memakai versi aman, MQTT masih menerima klien anonim (gagal ditutup kemarin), data `sensor-99` sudah dihapus, IP penyerang kemungkinan masih terblokir fail2ban.
