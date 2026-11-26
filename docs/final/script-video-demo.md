@@ -257,9 +257,11 @@ sudo bash /tmp/purple.sh mitigasi
 
 **Narasi:**
 
-Mitigasi dilakukan pada lapisan aplikasi, memakai skrip yang sama dengan tahap pengembalian kondisi, tetapi dengan mode yang berbeda.
+Mitigasi mencakup dua bagian yang berbeda: injeksi pada lapisan aplikasi, dan penyisipan data melalui layanan pesan. Keduanya ditangani pada satu tahap ini.
 
-Mode ini hanya menyentuh aplikasi. Konfigurasi layanan pesan, basis data, dan mekanisme pemblokiran tidak diubah, agar perubahan yang diuji terbatas pada satu variabel dan perbedaan hasil dapat diatribusikan dengan jelas.
+## Mitigasi SQL Injection
+
+Mitigasi pada lapisan aplikasi memakai skrip yang sama dengan tahap pengembalian kondisi, tetapi dengan mode yang berbeda.
 
 Skrip bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya dengan versi yang diperbaiki, lalu menjalankannya kembali. Urutan ini bukan formalitas. Proses yang beroperasi menyimpan kode di memori, sehingga penggantian berkas saat aplikasi masih berjalan tidak mengubah perilakunya. Kondisi itu pernah teramati saat latihan: berkas sudah diperbarui, tetapi pengujian tetap gagal karena yang berjalan masih kode lama.
 
@@ -273,7 +275,25 @@ Perubahan ketiga menyangkut penyajian data pada halaman dashboard. Pada versi la
 
 Perubahan keempat menghapus satu baris pada halaman dashboard yang menampilkan contoh alamat pemanggilan endpoint sensor, karena baris tersebut memberi petunjuk langsung mengenai parameter yang dapat diuji.
 
-Perlu ditegaskan bahwa hanya perubahan pertama yang menutup injeksi SQL. Tiga perubahan lainnya bersifat pengerasan tambahan: menutup kebocoran skema, mencegah penyisipan penanda HTML, dan menghapus petunjuk yang tidak diperlukan. Perubahan pada mode pengembangan tidak memengaruhi hasil pengujian, karena mode tersebut sejak awal tidak aktif.
+Perlu ditegaskan bahwa hanya perubahan pertama yang menutup injeksi SQL. Tiga perubahan lainnya bersifat pengerasan tambahan. Perubahan pada mode pengembangan tidak memengaruhi hasil pengujian, karena mode tersebut sejak awal tidak aktif.
+
+## Mitigasi MQTT Injection
+
+Mitigasi pada layanan pesan tidak dapat diselesaikan dengan mengganti berkas aplikasi. Masalahnya berada pada konfigurasi broker, sehingga yang harus diubah adalah konfigurasi tersebut.
+
+Pada kondisi rentan, broker menerima klien tanpa identitas. Siapa pun yang dapat menjangkau port 1883 dapat membaca seluruh topik sensor, dan dapat mengirim pesan yang mengaku berasal dari perangkat mana pun.
+
+Langkah pertama adalah memeriksa isi direktori konfigurasi. Terdapat lebih dari satu berkas konfigurasi, dan broker membacanya berurutan menurut abjad. Nilai yang dibaca terakhir yang berlaku.
+
+Di sinilah penyebab kegagalan mitigasi sebelumnya ditemukan. Berkas konfigurasi lama masih memuat akses anonim aktif, dan namanya berada setelah berkas konfigurasi baru. Akibatnya konfigurasi baru ditulis, tetapi nilai lama tetap menang. Berkas lama tersebut dipindahkan keluar dari direktori konfigurasi lebih dahulu, sebelum perubahan lain dilakukan.
+
+Langkah kedua adalah membuat akun untuk perangkat sensor. Kata sandi akun tersebut disimpan pada berkas tersendiri, yang kepemilikannya diserahkan kepada layanan broker dan izinnya dibatasi hanya untuk pemilik dan grup. Berkas kata sandi tidak dapat dibaca oleh pengguna lain pada mesin tersebut.
+
+Langkah ketiga adalah menulis ulang konfigurasi broker: akses anonim dimatikan, dan berkas kata sandi ditunjuk sebagai sumber autentikasi. Setelah itu layanan broker dijalankan ulang.
+
+Langkah keempat menyangkut pihak yang justru terdampak oleh perubahan ini, yaitu layanan penerima data pada mesin target. Layanan tersebut selama ini terhubung tanpa identitas, sehingga setelah akses anonim ditutup, ia akan ikut ditolak. Karena itu layanan tersebut diberi kredensial yang sama sebelum dijalankan kembali. Ini konsekuensi yang perlu disadari: menutup akses anonim tanpa menyesuaikan klien yang sah akan menghentikan aliran data, bukan mengamankannya.
+
+Langkah terakhir adalah verifikasi pada tiga titik. Pengiriman pesan tanpa identitas harus ditolak broker. Permintaan dashboard yang normal harus tetap berjalan. Dan berkas log layanan penerima harus menunjukkan bahwa data masih tercatat, sebagai bukti bahwa penutupan akses tidak memutus aliran data yang sah.
 
 ---
 
@@ -286,17 +306,22 @@ Perlu ditegaskan bahwa hanya perubahan pertama yang menutup injeksi SQL. Tiga pe
 ```
 curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"
 curl "http://192.168.5.5:3000/sensor?device=sensor-01"
+mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m 99.90
 ```
 
 **Narasi:**
 
-Verifikasi memakai dua perintah yang identik dengan tahap sebelumnya, baik alamat, parameter, maupun payload. Tidak ada karakter yang diubah. Perbedaannya hanya satu: aplikasinya telah diganti.
+Verifikasi memakai perintah yang identik dengan tahap sebelumnya, baik alamat, parameter, maupun payload. Tidak ada karakter yang diubah. Perbedaannya hanya satu: konfigurasi sistem telah diganti.
 
 Perintah pertama mengirim payload yang sebelumnya membuka seluruh tabel. Hasilnya sekarang kosong.
 
 Perintah kedua mengirim permintaan normal dengan identitas perangkat terdaftar. Hasilnya tetap dua baris, tetapi bentuknya sudah terstruktur. Perintah ini memastikan mitigasi tidak merusak fungsi aplikasi, karena penutupan celah yang membuat layanan berhenti bekerja bukanlah perbaikan.
 
-Karena masukannya identik, perubahan hasil hanya dapat disebabkan oleh perubahan pada aplikasi. Pernyataan bahwa sistem telah dimitigasi, tanpa pengujian ulang, masih berupa klaim. Dengan pengulangan serangan yang sama, hasilnya menjadi bukti.
+Perintah ketiga mengirim pesan palsu dengan identitas perangkat yang tidak ada, sama seperti pada tahap serangan. Hasilnya sekarang penolakan dari broker, karena pengirim tidak menyertakan identitas yang sah.
+
+Ketiga hasil ini menunjukkan satu hal: serangan yang sama, dengan masukan yang sama persis, tidak lagi berhasil. Karena masukannya identik, perubahan hasil hanya dapat disebabkan oleh perubahan pada sistem. Pernyataan bahwa sistem telah dimitigasi, tanpa pengujian ulang, masih berupa klaim. Dengan pengulangan serangan yang sama, hasilnya menjadi bukti.
+
+Perlu dicatat satu hal yang tidak terlihat pada layar ini. Setelah akses anonim ditutup, layanan penerima data pada mesin target juga kehilangan hak aksesnya, sehingga ia perlu diberi kredensial sebelum dijalankan kembali. Tanpa langkah itu, penutupan akses akan menghentikan aliran data yang sah, dan sistem menjadi aman karena tidak lagi berfungsi.
 
 ---
 
@@ -314,9 +339,11 @@ Mekanisme autentikasi diperkuat: basis data hanya menerima koneksi dari dalam me
 
 Injeksi pada lapisan aplikasi tertutup, dan terbukti melalui pengulangan serangan yang identik.
 
-Penyisipan data melalui layanan pesan belum sepenuhnya tertangani. Konfigurasi sudah disiapkan, tetapi belum terbukti berlaku penuh, sehingga dicatat sebagai temuan terbuka.
+Penyisipan data melalui layanan pesan juga tertutup. Akses anonim pada broker dihentikan, dan pengiriman pesan tanpa identitas kini ditolak. Pada upaya pertama, langkah ini sempat gagal karena berkas konfigurasi lama masih berlaku dan menimpa konfigurasi baru. Kegagalan itu tercatat, ditelusuri, lalu diperbaiki dengan memindahkan berkas lama tersebut sebelum konfigurasi baru diterapkan.
 
-Temuan itu dicatat apa adanya. Konfigurasi yang belum terbukti bukan mitigasi, dan pernyataan bahwa persoalan telah selesai hanya akan menutupi masalah yang masih ada.
+Satu hal yang perlu dicatat dari langkah itu: menutup akses anonim juga memutus layanan penerima data yang sah, sehingga layanan tersebut harus diberi kredensial terlebih dahulu. Mitigasi yang membuat sistem berhenti bekerja bukanlah mitigasi, melainkan gangguan. Karena itu verifikasi tidak berhenti pada penolakan terhadap penyerang, tetapi juga memastikan data yang sah masih mengalir dan tercatat.
+
+Dengan demikian, tiga temuan pada tahap serangan telah ditangani: kebocoran data melalui parameter aplikasi, kebocoran informasi skema, dan penyisipan data melalui layanan pesan. Seluruh perubahan diverifikasi dengan pengulangan serangan yang sama, bukan dengan pernyataan bahwa konfigurasi telah diubah.
 
 Demikian yang dapat kami sampaikan. Terima kasih.
 
