@@ -136,19 +136,11 @@ kasus_mitigasi() {
     mv /etc/mosquitto/conf.d/pb15-awal.conf /root/pb15-awal.conf.nonaktif
     echo "  pb15-awal.conf dipindahkan ke /root"
   fi
-  if [ ! -f /etc/mosquitto/passwd ]; then
-    touch /etc/mosquitto/passwd
-  fi
-  # Akun sensor dibuat sekali saja, sandi acak, tidak perlu diketahui penonton.
-  if ! grep -q "^sensor:" /etc/mosquitto/passwd 2>/dev/null; then
-    SANDI=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
-    mosquitto_passwd -b /etc/mosquitto/passwd sensor "$SANDI"
-    chown mosquitto:mosquitto /etc/mosquitto/passwd
-    chmod 640 /etc/mosquitto/passwd
-    hijau "  akun sensor dibuat"
-  else
-    hijau "  akun sensor sudah ada"
-  fi
+  SANDI="SensorPBL5!2026"
+  mosquitto_passwd -c -b /etc/mosquitto/passwd sensor "$SANDI" >/dev/null 2>&1
+  chown mosquitto:mosquitto /etc/mosquitto/passwd
+  chmod 640 /etc/mosquitto/passwd
+  hijau "  akun sensor siap"
   cat > /etc/mosquitto/conf.d/default.conf <<'MQTT'
 listener 1883 0.0.0.0
 allow_anonymous false
@@ -157,7 +149,7 @@ MQTT
   systemctl restart mosquitto
   sleep 1
   if grep -rq "allow_anonymous true" /etc/mosquitto/ 2>/dev/null; then
-    merah "  masih ada allow_anonymous true di /etc/mosquitto, cek: grep -r allow_anonymous /etc/mosquitto"
+    merah "  masih ada allow_anonymous true di /etc/mosquitto, cek: sudo grep -r allow_anonymous /etc/mosquitto"
   else
     hijau "  tidak ada allow_anonymous true tersisa"
   fi
@@ -167,11 +159,44 @@ MQTT
     merah "  mosquitto tidak jalan, cek: systemctl status mosquitto"
   fi
 
-  echo "[4] nyalakan ulang aplikasi"
+  echo "[3b] subscriber diberi kredensial"
+  if [ -f "$DIR/subscriber.py" ]; then
+    if grep -q "username_pw_set" "$DIR/subscriber.py"; then
+      hijau "  subscriber sudah memakai kredensial"
+    else
+      cp "$DIR/subscriber.py" "$DIR/subscriber.py.asli"
+      python3 - "$DIR/subscriber.py" "$SANDI" <<'PY'
+import re, sys
+jalur, sandi = sys.argv[1], sys.argv[2]
+s = open(jalur).read()
+pola = re.compile(r'^(\s*)(\w+)\.connect\(', re.M)
+m = pola.search(s)
+if m:
+    indent, nama = m.group(1), m.group(2)
+    sisip = '%s%s.username_pw_set("sensor", "%s")\n' % (indent, nama, sandi)
+    s = s[:m.start()] + sisip + s[m.start():]
+    open(jalur, "w").write(s)
+    print("  kredensial disisipkan sebelum %s.connect(" % nama)
+else:
+    print("  TIDAK menemukan pola .connect(, subscriber tidak diubah")
+PY
+    fi
+  else
+    merah "  $DIR/subscriber.py tidak ada"
+  fi
+
+  echo "[4] nyalakan ulang subscriber dan aplikasi"
   cd "$DIR" || exit 1
+  berhenti_proses "python3 subscriber.py"
+  setsid nohup python3 subscriber.py > "$LOG/subscriber.log" 2>&1 < /dev/null &
   setsid nohup python3 app.py > "$LOG/dashboard.log" 2>&1 < /dev/null &
   sleep 2
   if tunggu_port; then hijau "  port 3000 hidup"; else merah "  gagal, lihat $LOG/dashboard.log"; fi
+  if ps -eo args | grep -F "python3 subscriber.py" | grep -v grep >/dev/null; then
+    hijau "  subscriber hidup"
+  else
+    merah "  subscriber mati, lihat $LOG/subscriber.log"
+  fi
 
   kasus_cek
 }
