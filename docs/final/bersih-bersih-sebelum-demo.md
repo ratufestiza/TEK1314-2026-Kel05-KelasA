@@ -32,11 +32,11 @@ Lihat nama kolomnya dulu, jangan menebak:
 
 `DESCRIBE sensor_readings;`
 
-Hapus baris palsu. Pakai nama kolom yang muncul dari DESCRIBE, contoh kalau kolomnya `device`:
+Dari kode aplikasi, kolom identitas perangkat bernama `device_id`. Hapus baris palsu:
 
-`DELETE FROM sensor_readings WHERE device='sensor-99';`
+`DELETE FROM sensor_readings WHERE device_id='sensor-99';`
 
-Kalau bingung nama kolomnya, hapus lewat nilainya saja, tanpa tanda kutip:
+Kalau nama kolom ternyata lain, hapus lewat nilainya saja, tanpa tanda kutip:
 
 `DELETE FROM sensor_readings WHERE suhu=99.90;`
 

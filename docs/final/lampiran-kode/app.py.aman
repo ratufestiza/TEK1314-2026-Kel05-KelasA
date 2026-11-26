@@ -1,0 +1,42 @@
+from flask import Flask, request, jsonify
+import pymysql
+
+app = Flask(__name__)
+
+conf = {}
+with open("/etc/iot/iot.env") as fh:
+    for baris in fh:
+        if "=" in baris:
+            kunci, nilai = baris.strip().split("=", 1)
+            conf[kunci] = nilai
+
+DB = dict(host=conf["DB_HOST"], port=int(conf["DB_PORT"]), user=conf["DB_USER"], password=conf["DB_PASS"], database=conf["DB_NAME"])
+
+
+@app.route("/")
+def index():
+    return "<h1>Dashboard IoT PBL5</h1><p>Coba /sensor?device=sensor-01</p>"
+
+
+@app.route("/sensor")
+def sensor():
+    dev = request.args.get("device", "")
+    conn = pymysql.connect(**DB)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM sensor_readings WHERE device_id = %s", (dev,))
+    rows = cur.fetchall()
+    kolom = [d[0] for d in cur.description]
+    conn.close()
+
+    hasil = []
+    for baris in rows:
+        isi = {}
+        for kunci, nilai in zip(kolom, baris):
+            isi[kunci] = nilai if isinstance(nilai, (int, float)) else str(nilai)
+        hasil.append(isi)
+
+    return jsonify({"jumlah": len(hasil), "data": hasil})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000, debug=False)
