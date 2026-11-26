@@ -4,7 +4,7 @@ Narasi formal. Tiap perintah dijelaskan fungsinya secara utuh sebagai satu perin
 
 ---
 
-## SCENE 1 - Pembuka
+## SCENE 1 - Introduction
 
 **Layar:** tiga jendela VM.
 
@@ -22,7 +22,7 @@ Metodenya purple team: serangan dilaksanakan, mitigasi disiapkan, kemudian seran
 
 ---
 
-## SCENE 2 - Menyalakan mesin
+## SCENE 2 - Starting the Virtual Machines
 
 **Layar:** terminal host.
 
@@ -43,7 +43,7 @@ Perintah terakhir menampilkan daftar mesin yang sedang beroperasi, untuk memasti
 
 ---
 
-## SCENE 3 - Mengembalikan kondisi target
+## SCENE 3 - Restoring the Vulnerable State
 
 **Layar:** jendela AYAM.
 
@@ -65,7 +65,7 @@ Di akhir, skrip memverifikasi hasilnya sendiri. Apabila kondisi rentan belum ter
 
 ---
 
-## SCENE 4 - Titik pemantauan
+## SCENE 4 - Packet Capture
 
 **Layar:** jendela onion.
 
@@ -88,7 +88,7 @@ Perekaman dimulai sebelum serangan pertama, karena sensor pada lingkungan ini me
 
 ---
 
-## SCENE 5 - Pemetaan layanan
+## SCENE 5 - Service Enumeration
 
 **Layar:** jendela penyerang.
 
@@ -110,7 +110,7 @@ Basis datanya tetap beroperasi dan tetap menyimpan seluruh data. Yang berubah ha
 
 ---
 
-## SCENE 6 - Mekanisme autentikasi
+## SCENE 6 - Authentication Mechanism
 
 **Layar:** jendela penyerang, lalu AYAM.
 
@@ -134,7 +134,7 @@ Perintah ketiga dijalankan pada mesin target, bukan penyerang, dan hanya membaca
 
 ---
 
-## SCENE 7 - Lapisan aplikasi
+## SCENE 7 - SQL Injection
 
 **Layar:** jendela penyerang.
 
@@ -164,7 +164,7 @@ Ada kebocoran tambahan: format keluarannya masih representasi mentah bahasa pemr
 
 ---
 
-## SCENE 8 - Data palsu melalui layanan pesan
+## SCENE 8 - MQTT Data Injection
 
 **Layar:** dua terminal penyerang, lalu AYAM, lalu browser.
 
@@ -196,7 +196,7 @@ Selanjutnya, analisis dilakukan pada Security Onion.
 
 ---
 
-## SCENE 9 - Analisis
+## SCENE 9 - PCAP Import
 
 **Layar:** jendela onion.
 
@@ -219,7 +219,7 @@ Prosesnya memerlukan waktu. Konsekuensinya, analisis berlangsung setelah seranga
 
 ---
 
-## SCENE 10 - Deteksi
+## SCENE 10 - Detection in Kibana
 
 **Layar:** Kibana, Discover.
 
@@ -245,7 +245,7 @@ Ada dua batas. Pertama, karena sensor bekerja dari berkas tangkapan, selalu ada 
 
 ---
 
-## SCENE 11 - Mitigasi
+## SCENE 11 - Mitigation
 
 **Layar:** jendela AYAM.
 
@@ -269,7 +269,7 @@ Setelah penggantian, ada tiga perubahan. Masukan tidak lagi disambungkan ke dala
 
 ---
 
-## SCENE 12 - Verifikasi
+## SCENE 12 - Verification
 
 **Layar:** jendela penyerang.
 
@@ -292,7 +292,7 @@ Karena masukannya identik, perubahan hasil hanya dapat disebabkan oleh perubahan
 
 ---
 
-## SCENE 13 - Penutup
+## SCENE 13 - Closing
 
 **Layar:** tiga jendela VM.
 
@@ -314,7 +314,7 @@ Demikian yang dapat kami sampaikan. Terima kasih.
 
 ---
 
-# Catatan Produksi
+# Production Notes
 
 Rekam dua sesi. Sesi pertama Scene 1 sampai 8, sesi kedua Scene 9 sampai 13. Perekaman di mesin pemantau jangan dihentikan di antara dua sesi.
 
