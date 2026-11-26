@@ -511,7 +511,8 @@ Harus muncul `menunggu pesan di sensors/#`.
 7. Kibana memakai UTC, catatan tim memakai WIB, selisih tujuh jam. Jangan mengira itu sesi berbeda.
 8. Menuliskan perintah dengan tanda kutip lewat chat berisiko terpotong saat disalin. Ketik SQL langsung di prompt mysql.
 9. Subscriber menolak payload berkoma. `99.90,0.00` masuk log sebagai `dilewati, payload bukan angka atau JSON`. Pakai angka polos `99.90` atau JSON `{"suhu": 99.90, "kelembapan": 0}`.
-10. `killall -f` tidak dikenal di image Target, dan `killall app.py` tidak menemukan apa pun karena nama prosesnya `python3`. Matikan pakai `sudo kill <PID>` dari hasil `ps -eo pid,cmd | grep app.py`.
+
+10. Port masih dipegang proses lama, ditandai `Address already in use` di log. Gejalanya aplikasi baru tidak jalan tapi berkasnya sudah benar. Selalu cek `ss -tln | grep 3000` sebelum menyalakan ulang.
 
 ---
 
