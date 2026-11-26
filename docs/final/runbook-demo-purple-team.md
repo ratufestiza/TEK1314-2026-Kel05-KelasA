@@ -241,8 +241,8 @@ Yang **tidak** diklaim selesai: skenario 3b belum tuntas. Konfigurasi aman untuk
 | Target | `192.168.5.5`, user `fattih` | siap |
 | Attacker | `192.168.5.100`, user `analyst@secOps` | siap |
 | Monitoring | `192.168.5.200` | layanan web belum menyala |
-| `app.py` | 806 byte, versi rentan | siap |
-| `app.py.aman` | 1155 byte, versi aman | siap |
+| `app.py` | 1483 byte, versi rentan | siap |
+| `app.py.aman` | 1791 byte, versi aman | siap |
 | Dashboard | `0.0.0.0:3000` | nyala |
 | Subscriber | satu proses | nyala, menunggu pesan |
 | MQTT | `allow_anonymous true` | terbuka |
@@ -471,6 +471,58 @@ Jangan habiskan waktu di depan penonton. Cukup katakan layanan monitoring sedang
 ## Selisih waktu
 
 Kibana memakai UTC, catatan tim memakai WIB. Selisihnya tujuh jam. Kalau ada yang bertanya kenapa jamnya beda dengan jam di HP, jawabannya itu.
+
+---
+
+# Bagian 4c - Cara Onion dapat data, dan siapa yang merekam
+
+Ini pertanyaan yang paling sering salah dijawab saat presentasi, jadi urutannya perlu jelas.
+
+## Dua jalur, dua alat, dua pemilik
+
+| Jalur | Siapa yang menjalankan | Alat | Yang berpindah |
+| --- | --- | --- | --- |
+| Rekaman paket | Onion sendiri, di antarmuka segmennya | `tcpdump` | berkas pcap, lalu diimpor ke sensor |
+| Kiriman log | Target, lewat rsyslog | rsyslog ke port 514 | baris log sistem dan auth |
+
+Yang merekam **bukan** Attacker. Attacker tidak tahu dan tidak perlu tahu ada perekaman. Semua paket di segmen `pbl5-lan` lewat kartu jaringan Onion, jadi otomatis terlihat.
+
+Yang benar-benar "dikirim" cuma log, dan itu dari Target ke Onion, bukan dari Attacker.
+
+## Konsekuensi yang harus dijelaskan
+
+Sensor berjalan dalam mode import dengan nama `seconion-import`. Artinya yang dianalisis adalah berkas tangkapan yang diimpor, bukan arus langsung.
+
+Maka rekaman harus diambil **sebelum atau selama** serangan berlangsung. Kalau menyerang dulu baru ingat merekam, paketnya sudah lewat dan tidak bisa diulang.
+
+## Kalau mau merekam saat demo
+
+Di VM Onion, buka terminal sendiri sebelum serangan dimulai:
+
+`sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap`
+
+Biarkan jalan. Setelah serangan selesai, hentikan dengan `Ctrl+C`.
+
+Cek jumlah paketnya:
+
+`tcpdump -r /tmp/pbl5-demo.pcap | wc -l`
+
+Lalu impor lewat menu Hunt di Security Onion, atau lewat antarmuka import yang ada di versi yang terpasang.
+
+Kalau nama antarmukanya bukan `eth2`, cek dulu:
+
+`ip -br a`
+
+Yang dipakai adalah antarmuka yang punya alamat `192.168.5.200`.
+
+## Kalau tidak mau repot merekam saat demo
+
+Itu pilihan yang sah, dan ada dua cara menyampaikannya dengan jujur:
+
+1. Sebut bahwa bagian deteksi sudah didokumentasikan pada sesi rekaman sebelumnya, dan tunjukkan tangkapan layarnya.
+2. Sebut bahwa demo hari ini fokus pada serangan dan mitigasi, sementara deteksi ditunjukkan lewat bukti yang sudah ada.
+
+Yang tidak boleh: mengklaim Kibana sedang menangkap langsung padahal sensornya mode import.
 
 ---
 
