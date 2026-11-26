@@ -112,15 +112,23 @@ Browser di dalam VM Onion, bukan dari Attacker.
 
 Ini penyebab paling sering kenapa Kibana terlihat kosong padahal impornya berhasil: rentang waktunya terlalu sempit.
 
-**Langkah 4, tambahkan kolom.** Di daftar kolom sebelah kiri, tambahkan `source_ip` dan `destination_ip`. Nama field memakai garis bawah, bukan titik, karena Security Onion di lab ini versi 16.04. Kalau di versi lain, baru `source.ip`.
+**Langkah 4, jangan pakai filter kalau belum yakin nama field-nya.** Di SecOnion 16.04, nama field yang benar-benar ada di log Zeek adalah `id.orig_h`, `id.resp_h`, `destination_ips`, `virtual_host`. Tidak ada `source_ip` dan tidak ada `destination_ip`. Mengetik nama yang tidak ada akan memunculkan error, bukan hasil kosong.
 
-**Langkah 5, saring.** Ketik di kotak pencarian:
+**Langkah 5, saring lewat search bar, bukan lewat tombol filter.** Ini cara yang paling tahan versi dan sudah terbukti:
 
-`source_ip:"192.168.5.100" and destination_ip:"192.168.5.5"`
+`"192.168.5.100" AND "192.168.5.5"`
 
-Yang akan muncul: lalu lintas dari Attacker ke Target.
+Tanda kutip penting supaya dibaca sebagai frasa, bukan dipecah per bagian.
 
-Pola indeks yang benar untuk versi ini adalah `*:logstash-*`, pakai titik dua. Itu yang muncul di daftar pola indeks, bukan `logstash` saja.
+Kalau mau memakai nama field, pakai yang benar:
+
+`id.orig_h:"192.168.5.100" AND id.resp_h:"192.168.5.5"`
+
+Kalau cara itu masih error, berarti field-nya bertipe analyzed, dan Kibana 6 tidak mengizinkan filter di field seperti itu. Balik ke pencarian teks bebas.
+
+Yang muncul: log Zeek `conn`, `http`, dan `files` dari Attacker ke Target, dengan `conn_state: SF` dan `resp_bytes` yang menandakan ada balasan dari server.
+
+**Pola indeks** yang benar untuk versi ini `*:logstash-*`, pakai titik dua. Itu yang muncul di daftar pola indeks, bukan `logstash` saja.
 
 ---
 
@@ -183,9 +191,11 @@ Security Onion di lab ini versi lama, 16.04. Perbedaannya berpengaruh ke dua hal
 | Hal | Versi ini | Versi baru |
 | --- | --- | --- |
 | Pola indeks | `*:logstash-*` | `logs-*` |
-| Nama field | `source_ip` | `source.ip` |
+| Nama field IP | `id.orig_h`, `id.resp_h`, `destination_ips` | `source.ip`, `destination.ip` |
 
-Jadi kalau mengetik filter, pakai garis bawah. Kalau memilih pola indeks, pakai yang ada titik duanya.
+Jadi jangan mengetik `source_ip` atau `source.ip` di versi ini, field itu tidak ada dan akan memunculkan error. Pakai pencarian teks bebas dengan tanda kutip:
+
+`"192.168.5.100" AND "192.168.5.5"`
 
 ---
 
@@ -213,4 +223,4 @@ Periksa berurutan, jangan lompat.
 5. Tunggu sampai selesai, jangan dihentikan.
 6. Buka `https://localhost` di browser Onion.
 7. Discover, pilih pola indeks yang memuat `logstash`, set Last 7 days.
-8. Saring `source.ip : "192.168.5.100"`.
+8. Saring `"192.168.5.100" AND "192.168.5.5"` di search bar.

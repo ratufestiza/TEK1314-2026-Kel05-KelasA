@@ -470,8 +470,7 @@ Yang ditunjukkan di Kibana:
 
 1. Buka menu **Discover**.
 2. Set rentang waktu ke 30 menit terakhir.
-3. Tambahkan kolom `source.ip` dan `destination.port`.
-4. Filter: `source.ip : "192.168.5.100"` dan `destination.ip : "192.168.5.5"`.
+3. Jangan pakai filter field, nama field di SecOnion 16.04 berbeda. Langsung ketik di search bar: `"192.168.5.100" AND "192.168.5.5"`.
 
 Yang akan kelihatan: lalu lintas pemindaian dan percobaan koneksi dari Attacker ke Target. Di catatan proyek tercatat 50 hit untuk pola ini.
 
