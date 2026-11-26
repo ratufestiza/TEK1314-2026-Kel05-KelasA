@@ -118,9 +118,10 @@ Target: membuktikan perbaikan berlaku, lalu menyusun laporan dan bahan presentas
 - Tangkapan lalu lintas sesi verifikasi menghasilkan 45 paket.
 - Lima belas sel `docs/purple-team-log.md` selesai diisi, termasuk sel yang mencatat kegagalan.
 - `docs/final/incident_report.pdf` disusun mengikuti NIST SP 800-61r2, delapan bagian, 25 halaman.
-- `docs/presentation-final/slides.pdf` disusun, tiga belas slide.
+- `slides.pdf` disusun, dua belas slide.
+- Video demonstrasi diunggah ke https://youtu.be/b0riabC46ik dan tautannya dicantumkan di README.
 - Repositori dirapikan: bukti disusun per skenario, `.gitignore` dipasang, README dan logbook diperbarui.
-- Video demonstrasi belum direkam pada saat logbook ini ditutup, dan tautannya akan dicantumkan di README.
+- Video demonstrasi sudah diunggah ke https://youtu.be/b0riabC46ik dan tautannya tercantum di README, menggantikan catatan sebelumnya.
 
 ## Catatan lintas pekan
 

@@ -143,7 +143,9 @@ Mengikuti kisi-kisi Bagian VII Panduan PBL Minggu 14-15. Tujuh komponen wajib, t
 | Deteksi | Kibana 50 hits, hanya alert ICMP, tanpa signature pemindaian | fail2ban mencatat lima kegagalan dan dua blokir 1800 detik |
 | Analisis | tidak ada dampak fungsional, tetapi peta layanan terbuka | timeout pada MySQL bukan refused, artinya paket dijatuhkan sebelum sampai layanan |
 | Mitigasi | ufw dan penutupan layanan tak terpakai | C1 loopback, A1 tanpa kata sandi, A3 fail2ban |
-| Verifikasi | pemindaian ulang menyisakan dua port terbuka | hasil identik, kontrol memang sudah aktif sebelum insiden |
+| Verifikasi | pemindaian ulang menyisakan dua port terbuka, yaitu 1883 dan 3000; pemindaian ini dilakukan setelah seluruh hardening, sehingga angkanya berbeda dari tiga port pada tahap serang | hasil identik, kontrol memang sudah aktif sebelum insiden |
+
+**Keterangan pembicara:** Kalau ada yang menanyakan selisih angka tiga dan dua, jelaskan bahwa itu dua waktu pengukuran berbeda, bukan dua hasil yang bertentangan.
 
 **Keterangan pembicara:** Hydra melaporkan nol kata sandi valid tanpa satu pun percobaan terkirim. Itu bukan bukti kata sandi kuat, melainkan bukti jalur sudah tertutup.
 
@@ -205,6 +207,7 @@ Mengikuti kisi-kisi Bagian VII Panduan PBL Minggu 14-15. Tujuh komponen wajib, t
 ## Catatan Teknis
 
 - Batas slide menurut panduan adalah 10 sampai 12. Susunan di atas tepat 12 termasuk cover.
-- Format unggahan wajib PDF, bukan pptx. Ekspor setelah selesai mengisi.
-- Slide 8 bergantung pada video yang belum direkam. Bila video belum ada, ganti dengan demo langsung dan sebutkan tautannya menyusul di README.
+- Format unggahan wajib PDF, bukan pptx. Ekspor PDF itu yang diunggah, berkas sumber .pptx tidak disertakan di repositori karena dibuat di Canva dan tidak bisa diedit ulang di PowerPoint.
+- Slide 8 memakai pemutaran video. Tautan rekaman https://youtu.be/b0riabC46ik sudah tercantum di README.
+- Slide arsitektur tidak ada pada versi final. Bila dosen meminta peta jaringan, tampilkan `documentation/topologi.jpeg` secara terpisah, jangan menambah slide baru di tengah presentasi.
 - Jangan menambah em dash di teks mana pun.

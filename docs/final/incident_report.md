@@ -649,8 +649,8 @@ Lampiran ini memeriksa apakah seluruh artefak yang dihasilkan sepanjang proyek l
 | Laporan red team fase 2 | `docs/redteam/laporan-redteam-fase-2.docx` | 11 | lengkap | 11 bab, 24 gambar, 31 tabel |
 | Purple team log | `docs/purple-team-log.md` | 10-11 | lengkap | 15 sel terisi, tiga skenario lima tahap |
 | Incident report | `docs/final/incident_report.pdf` | 13 | lengkap | delapan bagian NIST SP 800-61r2 |
-| Video demonstrasi | tautan pada README | 12-13 | belum ada | rekaman belum dibuat, tautan menyusul |
-| Bahan presentasi | `docs/presentation-final/slides-final.pdf` | 14 | lengkap | 13 slide, tujuh bagian wajib |
+| Video demonstrasi | `https://youtu.be/b0riabC46ik` | 12-13 | lengkap | rekaman sudah diunggah, tautan tercantum di README |
+| Bahan presentasi | `slides.pdf` | 14 | lengkap | 12 slide, tujuh komponen wajib |
 
 Empat ketidaksesuaian ditemukan pada pemeriksaan ini dan sudah diperbaiki sebelum laporan dirender. Semuanya bersumber pada angka yang ditulis dari ingatan, bukan dari berkas bukti.
 

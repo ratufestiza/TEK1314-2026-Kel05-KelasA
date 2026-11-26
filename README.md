@@ -8,6 +8,14 @@
 3. Ratu Festiza Alya Ichsan (J0404241174) - Security Analyst
 4. Al Fariz Muhammad Zibril (J0404241036) - Documentation
 
+## Video Demonstrasi
+
+Rekaman demo Purple Team: https://youtu.be/b0riabC46ik
+
+Durasi mengikuti naskah 13 scene pada `docs/final/script-video-demo.md`. Isinya penyerangan pada kondisi rentan, pengamatan lalu lintas, penerapan mitigasi SQL injection dan MQTT, lalu pengulangan payload yang sama untuk verifikasi.
+
+---
+
 ## Log Aktivitas Mingguan
 
 ### Minggu 1-2: Fase Setup
@@ -111,7 +119,8 @@
   - Tangkapan lalu lintas sesi verifikasi menghasilkan 45 paket.
   - Lima belas sel `docs/purple-team-log.md` selesai diisi, termasuk sel yang mencatat kegagalan.
   - `docs/final/incident_report.pdf` disusun mengikuti NIST SP 800-61r2, delapan bagian, 25 halaman.
-  - `docs/presentation-final/slides.pdf` disusun, tiga belas slide.
+  - `slides.pdf` disusun, dua belas slide.
   - Repositori dirapikan: bukti disusun per skenario dan `.gitignore` dipasang.
-  - Kendala: video demonstrasi belum direkam pada saat logbook ditutup. Solusi: tautan akan dicantumkan pada README setelah rekaman selesai.
+  - Video demonstrasi sudah direkam dan diunggah: https://youtu.be/b0riabC46ik (judul "SIBER KELOMPOK 5").
+  - Kendala: video demonstrasi belum tersedia pada saat logbook ditutup. Solusi: rekaman dibuat setelahnya dan tautannya dicantumkan di sini.
   - Artefak: `docs/final/`, `docs/presentation-final/`, `docs/purple-team-log.md`.
