@@ -153,7 +153,7 @@ Tanpa tanda kutip. Subscriber menolak format berkoma, jadi `99.90,0.00` akan dib
 
 Di VM AYAM, cek log subscriber:
 
-`tail -3 /tmp/subscriber.log`
+`tail -3 /var/log/iot/subscriber.log`
 
 Harus ada `tersimpan: sensor-99 99.9 0.0`.
 

@@ -46,13 +46,13 @@ Kalau mati:
 
 `cd /opt/iot-dashboard`
 
-`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+`sudo -b nohup python3 app.py > /var/log/iot/dashboard.log 2>&1 &`
 
-`sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &`
+`sudo -b nohup python3 subscriber.py > /var/log/iot/subscriber.log 2>&1 &`
 
 Cek log subscriber, harus ada `menunggu pesan di sensors/#`:
 
-`tail -5 /tmp/subscriber.log`
+`tail -5 /var/log/iot/subscriber.log`
 
 ## 0.4 Target, pastikan versi berkas benar
 
@@ -275,7 +275,7 @@ Yang **tidak** diklaim selesai: skenario 3b belum tuntas. Konfigurasi aman untuk
 | Payload OR | 4 baris | benar |
 | Payload AND | nol baris | benar |
 
-Dashboard dan subscriber dijalankan di latar belakang dengan `nohup`. Log ada di `/tmp/dashboard.log` dan `/tmp/subscriber.log`. Kalau salah satu mati, nyalakan lagi seperti di Bagian 5.
+Dashboard dan subscriber dijalankan di latar belakang dengan `nohup`. Log ada di `/var/log/iot/dashboard.log` dan `/var/log/iot/subscriber.log`. Kalau salah satu mati, nyalakan lagi seperti di Bagian 5.
 
 ---
 
@@ -393,13 +393,13 @@ Ukuran keduanya harus sama, 1791 byte. Kalau beda, `app.py.aman` sudah rusak dan
 
 **Langkah 3, nyalakan ulang:**
 
-`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+`sudo -b nohup python3 app.py > /var/log/iot/dashboard.log 2>&1 &`
 
 Tunggu tiga detik, lalu pastikan port hidup lagi dan log tidak memuat `Address already in use`:
 
 `ss -tln | grep 3000`
 
-`tail -3 /tmp/dashboard.log`
+`tail -3 /var/log/iot/dashboard.log`
 
 **Di VM Attacker, ulangi payload yang sama persis:**
 
@@ -560,9 +560,9 @@ Kalau kosong:
 
 `cd /opt/iot-dashboard`
 
-`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+`sudo -b nohup python3 app.py > /var/log/iot/dashboard.log 2>&1 &`
 
-`tail -20 /tmp/dashboard.log`
+`tail -20 /var/log/iot/dashboard.log`
 
 **Data MQTT tidak masuk tabel.** Cek subscriber:
 
@@ -572,9 +572,9 @@ Kalau kosong:
 
 `cd /opt/iot-dashboard`
 
-`sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &`
+`sudo -b nohup python3 subscriber.py > /var/log/iot/subscriber.log 2>&1 &`
 
-`tail -5 /tmp/subscriber.log`
+`tail -5 /var/log/iot/subscriber.log`
 
 Harus muncul `menunggu pesan di sensors/#`.
 
@@ -620,8 +620,8 @@ Semua perintah yang dipakai demo, dikelompokkan per mesin. Buka bagian ini kalau
 | pasang alamat | `sudo netplan apply` |
 | cek port | `ss -tln \| grep -e ':3000' -e ':1883'` |
 | cek proses | `ps aux \| grep -e app.py -e subscriber \| grep -v grep` |
-| nyalakan dashboard | `sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &` |
-| nyalakan subscriber | `sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &` |
+| nyalakan dashboard | `sudo -b nohup python3 app.py > /var/log/iot/dashboard.log 2>&1 &` |
+| nyalakan subscriber | `sudo -b nohup python3 subscriber.py > /var/log/iot/subscriber.log 2>&1 &` |
 | matikan dashboard | `ps -eo pid,cmd \| grep app.py \| grep -v grep` lalu `sudo kill <PID>` |
 | cek versi berkas | `ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman` |
 | tukar ke aman | `sudo cp app.py.aman app.py` |
