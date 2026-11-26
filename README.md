@@ -9,6 +9,7 @@
 4. Al Fariz Muhammad Zibril (J0404241036) - Documentation
 
 **Video demonstrasi:** https://youtu.be/b0riabC46ik
+**Dokumentasi pemasangan VM:** https://docs.google.com/document/d/1kLTl9QgCAbP9AlRmZ7LeZou6PkfrzocWbvTxVEbz9e0/edit?tab=t.0
 
 ## Log Aktivitas Mingguan
 
