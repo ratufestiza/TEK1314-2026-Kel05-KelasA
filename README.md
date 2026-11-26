@@ -8,13 +8,7 @@
 3. Ratu Festiza Alya Ichsan (J0404241174) - Security Analyst
 4. Al Fariz Muhammad Zibril (J0404241036) - Documentation
 
-## Video Demonstrasi
-
-Rekaman demo Purple Team: https://youtu.be/b0riabC46ik
-
-Durasi mengikuti naskah 13 scene pada `docs/final/script-video-demo.md`. Isinya penyerangan pada kondisi rentan, pengamatan lalu lintas, penerapan mitigasi SQL injection dan MQTT, lalu pengulangan payload yang sama untuk verifikasi.
-
----
+**Video demonstrasi:** https://youtu.be/b0riabC46ik
 
 ## Log Aktivitas Mingguan
 
