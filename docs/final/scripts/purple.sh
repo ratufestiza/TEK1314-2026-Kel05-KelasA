@@ -6,7 +6,12 @@
 
 set -u
 DIR="/opt/iot-dashboard"
+LOG="/var/log/iot"
 AKSI="${1:-cek}"
+mkdir -p "$LOG" 2>/dev/null
+# /tmp memakai fs.protected_regular, root tidak boleh menimpa berkas milik user
+# lain di direktori sticky. Log lama di /tmp dibersihkan supaya tidak bentrok.
+rm -f /tmp/dashboard.log /tmp/subscriber.log 2>/dev/null
 
 hijau() { printf '\033[32m%s\033[0m\n' "$1"; }
 merah() { printf '\033[31m%s\033[0m\n' "$1"; }
@@ -36,8 +41,8 @@ tunggu_port() {
 
 nyalakan() {
   cd "$DIR" || exit 1
-  setsid nohup python3 app.py > /tmp/dashboard.log 2>&1 < /dev/null &
-  setsid nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 < /dev/null &
+  setsid nohup python3 app.py > "$LOG/dashboard.log" 2>&1 < /dev/null &
+  setsid nohup python3 subscriber.py > "$LOG/subscriber.log" 2>&1 < /dev/null &
   sleep 2
 }
 
@@ -102,7 +107,7 @@ MQTT
 
   echo "[6] nyalakan aplikasi"
   nyalakan
-  if tunggu_port; then hijau "  port 3000 hidup"; else merah "  port 3000 tidak hidup, lihat /tmp/dashboard.log"; fi
+  if tunggu_port; then hijau "  port 3000 hidup"; else merah "  port 3000 tidak hidup, lihat $LOG/dashboard.log"; fi
 
   kasus_cek
 }
@@ -124,9 +129,9 @@ kasus_mitigasi() {
 
   echo "[3] nyalakan ulang"
   cd "$DIR" || exit 1
-  setsid nohup python3 app.py > /tmp/dashboard.log 2>&1 < /dev/null &
+  setsid nohup python3 app.py > "$LOG/dashboard.log" 2>&1 < /dev/null &
   sleep 2
-  if tunggu_port; then hijau "  port 3000 hidup"; else merah "  gagal, lihat /tmp/dashboard.log"; fi
+  if tunggu_port; then hijau "  port 3000 hidup"; else merah "  gagal, lihat $LOG/dashboard.log"; fi
 
   kasus_cek
 }
