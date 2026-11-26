@@ -1,257 +1,316 @@
-# Runbook Demo Purple Team - Besok
+# Runbook Demo Purple Team
 
-Sebelum menjalankan berkas ini, selesaikan dulu `bersih-bersih-sebelum-demo.md`. Berkas itu membersihkan sisa rekaman kemarin. Berkas ini dipakai saat demo berlangsung.
+Dokumen ini dipakai saat demo, bukan saat persiapan. Untuk persiapan, selesaikan dulu `bersih-bersih-sebelum-demo.md`.
 
-Tujuan: mengembalikan Target Node ke kondisi rentan supaya tiga skenario bisa diperagakan ulang, tanpa menyentuh sepuluh kontrol hardening Fase 1.
+Ditulis ulang 26 November 2026 setelah pengecekan langsung ke VM.
 
-Kondisi sekarang: dashboard sudah memakai versi aman, MQTT masih menerima klien anonim (gagal ditutup kemarin), data `sensor-99` sudah dihapus, IP penyerang kemungkinan masih terblokir fail2ban.
+---
 
-## Di mesin mana perintah ini dijalankan
+# Bagian 1 - Kita ini sedang apa
 
-Ini yang paling gampang bikin salah, jadi dibaca dulu.
+## Apa yang dibangun
 
-| Perintah | Dijalankan di | Alamat yang dipakai |
+Replika sistem sprinkler otomatis untuk peternakan sapi perah. Sistem ini menyalakan penyiram berdasarkan indeks suhu dan kelembapan, dibantu visi komputer untuk membaca kondisi ternak. Kalau data sensornya dipalsukan, penyiram bisa menyala atau mati di waktu yang salah, dan itu berbahaya untuk hewan.
+
+Yang dipakai sebagai replika bukan sensor asli, melainkan empat layanan di satu mesin Linux:
+
+| Layanan | Port | Fungsi |
 | --- | --- | --- |
-| Balikkan `app.py`, restart, cek service | VM AYAM (Target) | tanpa alamat, cukup nama service |
-| Unban fail2ban | VM AYAM (Target) | tanpa alamat |
-| nmap, nc, hydra, curl serangan, mosquitto_pub, mosquitto_sub | VM Cybersecurity LabVM (Attacker) | `192.168.5.5` |
-| Buka Kibana, cek alert | VM CyberOps Security Onion | `192.168.5.200` |
+| SSH | 22 | administrasi jarak jauh |
+| Mosquitto | 1883 | jalur masuk data dari perangkat sensor |
+| Flask dashboard | 3000 | menampilkan pembacaan sensor |
+| MySQL | 3306 | menyimpan riwayat pembacaan |
 
-Semua perintah uji di runbook ini dijalankan dari Attacker dan menembak `192.168.5.5`.
+Alurnya: sensor mengirim lewat MQTT, subscriber menangkap lalu menulis ke tabel `sensor_readings`, dashboard membacanya kembali dan menampilkannya.
 
----
+## Siapa berperan apa
 
-## Langkah 0 - Bersihkan disk dulu
+| Peran | Tugas dalam demo |
+| --- | --- |
+| Red Team | menyerang. Semua perintah dari VM Attacker |
+| Blue Team | mendeteksi dan memitigasi. Perintah dijalankan di VM Target dan VM Onion |
+| Lead | membuka, menjelaskan alur, menutup |
 
-Disk C: hanya sisa sekitar 1,6 GB. Tiga VM sekaligus akan gagal.
+Red Team **tidak pernah** membuka Kibana. Kalau ada yang bertanya, tegaskan itu: penyerang tidak memantau pertahanan sendiri.
 
-1. Matikan semua VM.
-2. Jalankan pembersihan di host:
+## Istilah yang harus jelas di awal
 
-`~/hermes-tools/.venv/Scripts/python.exe -c "import shutil; print(shutil.disk_usage('C:/').free/2**30)"`
+**Purple Team** bukan tim ketiga. Ini cara kerja dua tim di satu meja dengan satu catatan bersama. Setiap skenario punya lima tahap:
 
-Angka harus di atas 15 GB sebelum lanjut. Kalau masih di bawah, hapus snapshot lama atau VM yang tidak dipakai.
+1. Serang, dikerjakan Red Team.
+2. Deteksi, dikerjakan Blue Team.
+3. Analisis, dikerjakan bersama.
+4. Mitigasi, dikerjakan Blue Team.
+5. Verifikasi, Red Team mengulang serangan yang sama, Blue Team mengonfirmasi.
 
----
-
-## Langkah 1 - Nyalakan urutan yang benar
-
-1. Nyalakan Target dulu, tunggu sampai prompt login muncul.
-
-`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "AYAM" --type headless`
-
-2. Nyalakan Attacker.
-
-`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "Cybersecurity LabVM Worksation 20230210" --type headless`
-
-3. Nyalakan Monitoring paling akhir, karena Security Onion paling lama siap.
-
-`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "CyberOps Security Onion" --type headless`
-
-4. Cek ketiganya jalan:
-
-`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" list runningvms`
+Inti demonya ada di tahap 5. Tanpa pengulangan setelah mitigasi, itu bukan purple team, itu cuma red team yang lapor.
 
 ---
 
-## Langkah 2 - Masuk ke Target Node
+# Bagian 2 - Tiga skenario, apa yang diserang
 
-Dari Attacker Node, atau dari jendela VM Target langsung.
+## Ringkasan
 
-`ssh fattih@192.168.5.5`
+| Skenario | Yang diserang | Kenapa bisa | Mitigasi |
+| --- | --- | --- | --- |
+| 1. Pengintaian | permukaan layanan di Target | banyak port terbuka dan terbaca versinya | ufw, kurangi layanan, tutup port tidak perlu |
+| 2. Akses kredensial | SSH dan MySQL | MySQL terbuka ke jaringan, SSH menerima kata sandi, tidak ada pembatas percobaan | MySQL ke loopback, SSH kunci saja, fail2ban |
+| 3. Lapisan aplikasi | dashboard dan broker MQTT | query digabung dengan format string, broker menerima klien anonim, identitas perangkat diambil mentah dari nama topik | parameterized query, keluaran JSON, autentikasi broker, daftar putih `device_id` |
 
-Cek alamat benar:
+## Skenario 1 - Pengintaian
 
-`ip a | grep 192.168.5`
+**Yang diserang:** port dan versi layanan di `192.168.5.5`.
 
-Harus muncul `inet 192.168.5.5/24`. Kalau kosong, pasang ulang alamat pada adapter `pbl5-lan`:
+**Kenapa berhasil:** sebelum hardening ada lima port terbuka dan setiap banner membocorkan versi. Informasi itu yang dipakai penyerang untuk memilih serangan berikutnya.
 
-`sudo netplan apply`
+**Bentuk serangan di demo:** `nmap -sS -sV -p- 192.168.5.5`.
 
-Kalau tetap kosong, berarti berkas netplan belum memuat alamat itu. Buka dengan `sudo nano /etc/netplan/50-cloud-init.yaml`, isi alamat `192.168.5.5/24` pada antarmuka yang menuju `pbl5-lan`, simpan, lalu jalankan `sudo netplan apply` lagi.
+**Yang ditunjukkan:** hanya tiga port terbuka, yaitu 22, 1883, dan 3000. MySQL tidak muncul karena sudah di loopback.
 
-Bukti terakhir alamat sudah benar: saat Flask menyala, outputnya menyebut `Running on http://192.168.5.5:3000`. Kalau `192.168.5.5` tidak ada di daftar itu, alamat segmen lab belum terpasang dan Attacker tidak akan bisa menyentuh port 3000.
+**Angka pembanding yang bisa disebut:** pemindaian penuh butuh 20,52 detik sebelum hardening, dan 780,26 detik sesudahnya. Perlambatan itu efek langsung dari pembatasan port dan rate limit.
 
----
+## Skenario 2 - Akses kredensial
 
-## Langkah 3 - Catat keadaan sekarang sebelum diubah
+**Yang diserang:** autentikasi SSH dan keterjangkauan MySQL.
 
-Jangan lewat langkah ini. Kalau ada yang salah, ini satu-satunya jalan balik.
+**Kenapa berhasil sebelum hardening:** MySQL mendengarkan di `0.0.0.0`, SSH menerima kata sandi, dan tidak ada yang membatasi jumlah percobaan.
 
-1. Lihat berkas aplikasi:
+**Bentuk serangan di demo:** `nc -vz 192.168.5.5 3306` lalu `hydra` ke SSH.
 
-`ls -l /opt/iot-dashboard/`
+**Yang ditunjukkan:** koneksi ke 3306 timeout, bukan refused. Bedanya penting: timeout berarti paketnya dibuang, jadi penyerang tidak tahu ada layanan atau tidak. Hydra ditolak pada tahap negosiasi metode, karena SSH hanya menerima kunci.
 
-2. Cari nama service dashboard yang sebenarnya:
+**Peran Blue Team:** `fail2ban` mencatat percobaan dan memblokir IP. Di laporan tercatat lima kegagalan sebelum IP diblokir, dengan masa blokir 1800 detik.
 
-`systemctl list-units --type=service | grep -i -e iot -e dash -e flask`
+## Skenario 3 - Lapisan aplikasi
 
-3. Cek service lain:
+Ini skenario utama, dan yang paling layak didemokan karena hasilnya kelihatan langsung di layar.
 
-`systemctl is-active mosquitto mysql`
+**3a. SQL injection pada dashboard**
 
-4. Cek subscriber berjalan berapa proses:
+Yang diserang: parameter `device` di `http://192.168.5.5:3000/sensor`.
 
-`ps aux | grep -i subscriber | grep -v grep`
+Kenapa berhasil: nilai dari pengguna digabung langsung ke dalam teks query dengan operator format string. Tidak ada pemisahan antara perintah dan data.
 
-Kemarin sempat ada tiga proses subscriber berjalan bersamaan, dan itu yang bikin baris palsu muncul tiga kali. Sekarang harus satu saja. Kalau lebih dari satu, matikan sisanya:
+Bukti mekanismenya bukan satu payload, tapi tiga yang hasilnya beda:
 
-`killall -f subscriber`
+| Payload | Hasil | Artinya |
+| --- | --- | --- |
+| `sensor-01` | 2 baris | perilaku normal |
+| `x' OR '1'='1` | 4 baris | seluruh tabel terbaca |
+| `x' AND '1'='2` | nol baris | kondisi bisa dipaksa selalu salah |
 
-Catatan: `pkill` tidak ada di image ini, yang tersedia `killall`. Sesudah itu jalankan satu proses subscriber lagi sesuai cara yang biasa dipakai.
+Tiga hasil berbeda dari satu parameter membuktikan masukannya mengubah logika query, bukan cuma diteruskan.
 
----
+**3b. Penyisipan data palsu lewat MQTT**
 
-## Langkah 4 - Balikkan aplikasi ke versi rentan
+Yang diserang: broker di port 1883.
 
-1. Simpan versi aman yang sekarang, jangan ditimpa:
+Kenapa berhasil: `allow_anonymous true`, jadi klien tanpa identitas diterima. Subscriber juga memakai nama topik sebagai `device_id` tanpa daftar putih, jadi penyerang bebas mengaku sebagai perangkat mana pun.
 
-`sudo cp /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman`
+Bentuk serangan: publish ke topik `sensors/sensor-99` dengan suhu 99.90. Karena tidak ada daftar putih, subscriber menuliskannya sebagai perangkat sah.
 
-2. Cek berkas asli masih ada:
+Dampaknya bukan pencurian data, tapi rusaknya kepercayaan pada data operasional. Dashboard menampilkan angka yang tidak berasal dari perangkat mana pun, tanpa penanda apa pun.
 
-`ls -l /opt/iot-dashboard/app.py.asli`
+## Mitigasi yang diperagakan
 
-Kalau tidak ada, cari cadangannya:
+| Perubahan | Alamat | Alasan |
+| --- | --- | --- |
+| Query jadi parameterized | `app.py` | memisahkan perintah dan data, menutup injeksi di akarnya |
+| Keluaran jadi JSON | `app.py` | repr tuple membocorkan urutan kolom dan tipe data |
+| Debug dimatikan | `app.py` | halaman galat membocorkan struktur internal |
+| Autentikasi broker | `default.conf` | klien tanpa identitas tidak boleh menulis data |
 
-`ls -l /opt/iot-dashboard/*.bak /opt/iot-dashboard/*asli* 2>/dev/null`
-
-3. Tukar ke versi rentan:
-
-`sudo cp /opt/iot-dashboard/app.py.asli /opt/iot-dashboard/app.py`
-
-4. Restart service dashboard, pakai nama yang didapat dari Langkah 3:
-
-`sudo systemctl restart <nama-service>`
-
-5. Pastikan hidup:
-
-`systemctl is-active <nama-service>`
-
----
-
-## Langkah 5 - Uji aplikasi sudah hidup
-
-Jalankan di VM Attacker. Alamatnya `192.168.5.5`, titik.
-
-1. Pembanding normal, harus mengembalikan dua baris:
-
-`curl "http://192.168.5.5:3000/sensor?device=sensor-01"`
-
-2. Payload OR, harus mengembalikan seluruh isi tabel:
-
-`curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
-
-Kalau nomor 1 gagal connect, jangan lanjut. Berarti Flask mati, atau alamat `192.168.5.5` belum terpasang di AYAM, atau ufw menahan. Periksa di AYAM dengan `ip a | grep 192.168.5`, lalu `sudo netplan apply` kalau kosong.
-
-Kalau nomor 1 keluar dua baris tapi nomor 2 keluar array kosong, berarti yang jalan masih versi aman. Tukar ulang berkasnya di AYAM dan restart.
+Yang **tidak** diklaim selesai: skenario 3b belum tuntas. Konfigurasi aman untuk broker sudah disiapkan tetapi belum dipastikan berlaku penuh. Di laporan ini dicatat sebagai temuan terbuka, bukan dinyatakan beres. Jangan menutupinya saat demo.
 
 ---
 
-## Langkah 6 - Bebaskan IP penyerang dari fail2ban
+# Bagian 3 - Kondisi VM, hasil pengecekan 26 November 2026
 
-1. Lihat status:
+| Item | Nilai | Status |
+| --- | --- | --- |
+| Target | `192.168.5.5`, user `fattih` | siap |
+| Attacker | `192.168.5.100`, user `analyst@secOps` | siap |
+| Monitoring | `192.168.5.200` | layanan web belum menyala |
+| `app.py` | 806 byte, versi rentan | siap |
+| `app.py.aman` | 1155 byte, versi aman | siap |
+| Dashboard | `0.0.0.0:3000` | nyala |
+| Subscriber | satu proses | nyala, menunggu pesan |
+| MQTT | `allow_anonymous true` | terbuka |
+| MySQL | `127.0.0.1:3306` | sesuai hardening |
+| Query normal | 2 baris | benar |
+| Payload OR | 4 baris | benar |
+| Payload AND | nol baris | benar |
 
-`sudo fail2ban-client status sshd`
-
-2. Kalau `192.168.5.100` ada di daftar banned:
-
-`sudo fail2ban-client set sshd unbanip 192.168.5.100`
-
-3. Ulangi untuk jail lain kalau ada:
-
-`sudo fail2ban-client status`
-
----
-
-## Langkah 7 - Pastikan MQTT tetap rentan
-
-Tidak perlu diubah, karena kemarin memang gagal ditutup. Cukup dibuktikan:
-
-1. Dari Target:
-
-`mosquitto_sub -h 192.168.5.5 -t 'sensors/#' -C 1 -W 3`
-
-2. Dari Attacker, kirim pesan:
-
-`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.9,0.0"`
-
-Kalau pesan masuk tanpa kata sandi, jalur ini siap didemokan.
+Dashboard dan subscriber dijalankan di latar belakang dengan `nohup`. Log ada di `/tmp/dashboard.log` dan `/tmp/subscriber.log`. Kalau salah satu mati, nyalakan lagi seperti di Bagian 5.
 
 ---
 
-## Langkah 8 - Uji tiga skenario dari Attacker
+# Bagian 4 - Urutan demo
 
-**Semua di sini dijalankan di VM Cybersecurity LabVM, bukan di AYAM.** Alamat target harus `192.168.5.5`.
+Total sekitar 35 menit. Kalau waktu mepet, lewati skenario 1 dan langsung ke 2 dan 3.
 
-1. Skenario 1, pengintaian:
+## Menit 0-3, pembuka
+
+Yang ditunjukkan: tiga jendela VM, tabel alamat.
+
+`ip -4 a | grep 192.168.5` di Target, hasilnya `192.168.5.5/24`.
+
+Kalimat pembuka: "Kami membangun replika sistem sprinkler otomatis untuk peternakan sapi perah. Yang kami uji bukan sensornya, tapi jalur datanya: dari perangkat masuk lewat MQTT, disimpan di MySQL, lalu ditampilkan di dashboard."
+
+## Menit 3-9, skenario 1
+
+**Di VM Attacker:**
 
 `nmap -sS -sV -p- 192.168.5.5`
 
-Yang diharapkan: tiga port terbuka, yaitu 22, 1883, dan 3000.
+Yang diucapkan saat menunggu: "Sebelum hardening ada lima port terbuka dan versi setiap layanan terbaca. Sekarang tinggal tiga."
 
-2. Skenario 2, kredensial:
+Setelah selesai: tunjukkan 22, 1883, 3000. Tekankan 3306 tidak muncul.
+
+## Menit 9-15, skenario 2
+
+**Di VM Attacker:**
 
 `nc -vz 192.168.5.5 3306`
 
-Yang diharapkan: timeout, bukan refused.
+Tunggu sampai timeout. Yang diucapkan: "Timeout, bukan refused. Artinya paketnya dibuang, jadi dari sisi penyerang layanannya tidak terlihat sama sekali."
 
 `hydra -l root -P /usr/share/wordlists/rockyou.txt ssh://192.168.5.5 -t 4`
 
-Yang diharapkan: ditolak pada tahap negosiasi metode.
+Tunggu sekitar satu menit, lalu hentikan dengan `Ctrl+C` kalau terlalu lama.
 
-3. Skenario 3 bagian web, dua perintah, perhatikan bedanya:
+Yang ditunjukkan: percobaan ditolak karena SSH hanya menerima kunci.
+
+**Di VM Target, peran Blue Team:**
+
+`sudo fail2ban-client status sshd`
+
+Tunjukkan daftar `Banned IP list` berisi `192.168.5.100` dan angka kegagalan. Kalau kosong, jelaskan saja bahwa pembatasannya aktif di level SSH dan tunjukkan konfigurasinya:
+
+`sudo sshd -T | grep -e passwordauthentication -e permitrootlogin`
+
+## Menit 15-25, skenario 3a, SQL injection
+
+**Di VM Attacker, tiga perintah berurutan:**
 
 `curl "http://192.168.5.5:3000/sensor?device=sensor-01"`
 
+Hasil: dua baris.
+
 `curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
 
-4. Skenario 3 bagian MQTT:
+Hasil: empat baris, seluruh tabel.
+
+`curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"`
+
+Hasil: nol baris, `()`.
+
+Yang diucapkan: "Tiga payload, tiga hasil berbeda. Ini bukti masukannya mengubah logika query. Kalau cuma bug tampilan, hasilnya akan sama."
+
+Sebut juga: keluaran berbentuk repr tuple, jadi urutan kolom dan tipe datanya ikut terbaca. Itu kebocoran tambahan.
+
+## Menit 25-32, skenario 3b, penyisipan data palsu
+
+**Terminal pertama, di VM Attacker:**
 
 `mosquitto_sub -h 192.168.5.5 -t 'sensors/#' -v`
 
-Biarkan terminal itu terbuka, lalu di terminal kedua:
+Biarkan terbuka.
 
-`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.9,0.0"`
+**Terminal kedua, di VM Attacker:**
 
-Yang diharapkan: pesan muncul di terminal subscriber, dan baris `sensor-99` masuk ke tabel lalu tampil di dashboard.
+`mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.90,0.00"`
 
-**Kalau `192.168.5.5` tidak menjawab sama sekali padahal Flask hidup, cek dulu di AYAM.** Saat Flask menyala, outputnya harus menyebut `Running on http://192.168.5.5:3000`. Kalau alamat itu tidak ada di daftar, berarti alamat segmen lab belum terpasang. Perbaikannya di AYAM: `sudo netplan apply`, lalu cek `ip a | grep 192.168.5`.
+Yang diucapkan: "Tidak ada kata sandi, tidak ada penolakan. Broker menerima siapa saja."
+
+**Di VM Target,** tunjukkan baris masuk:
+
+`sudo mysql -u root -p` lalu `USE iot_db;` lalu `SELECT * FROM sensor_readings ORDER BY id DESC LIMIT 3;`
+
+**Di browser VM Attacker,** buka `http://192.168.5.5:3000`. Baris suhu 99.90 muncul di posisi teratas. Angka itu mustahil untuk peternakan sapi perah, dan itulah inti insidennya: data operasional tidak bisa dipercaya lagi.
+
+## Menit 32-40, mitigasi dan verifikasi
+
+**Di VM Target, peran Blue Team:**
+
+`cd /opt/iot-dashboard`
+
+`sudo cp app.py.aman app.py`
+
+`killall -f app.py`
+
+`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+
+Tunggu, lalu pastikan:
+
+`ss -tln | grep 3000`
+
+**Di VM Attacker, ulangi payload yang sama persis:**
+
+`curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
+
+Hasil yang diharapkan: JSON dengan `"jumlah": 0`, bukan empat baris.
+
+Yang diucapkan: "Payload sama, hasil nol. Yang berubah bukan serangannya, tapi cara aplikasi memperlakukan masukan."
+
+## Menit 40-45, penutup
+
+Sebutkan apa adanya:
+
+1. Skenario 1 tertutup oleh pembatasan port.
+2. Skenario 2 tertutup oleh MySQL loopback, SSH kunci, dan fail2ban.
+3. Skenario 3a tertutup oleh parameterized query, terbukti lewat pengulangan payload.
+4. Skenario 3b belum tuntas. Autentikasi broker sudah disiapkan tetapi belum dipastikan berlaku penuh. Ini dicatat terbuka di laporan.
+
+Kalau ditanya kenapa masih terbuka: "Karena kami memilih mencatat apa adanya daripada mengklaim selesai. Konfigurasi yang belum terbukti berlaku bukan mitigasi."
 
 ---
 
-## Langkah 9 - Siapkan jalur balik untuk sesi mitigasi
+# Bagian 5 - Kalau ada yang mati di tengah demo
 
-Saat demo masuk tahap mitigasi, tukar lagi ke versi aman:
+**Dashboard tidak menjawab.** Di VM Target:
 
-`sudo cp /opt/iot-dashboard/app.py.aman /opt/iot-dashboard/app.py`
+`ps aux | grep app.py | grep -v grep`
 
-`sudo systemctl restart <nama-service>`
+Kalau kosong:
 
-Lalu ulangi payload yang sama dan tunjukkan hasilnya kosong. Inilah bukti yang diminta Tahap 5.
+`cd /opt/iot-dashboard`
+
+`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+
+`tail -20 /tmp/dashboard.log`
+
+**Data MQTT tidak masuk tabel.** Cek subscriber:
+
+`ps aux | grep subscriber | grep -v grep`
+
+Kalau kosong:
+
+`cd /opt/iot-dashboard`
+
+`sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &`
+
+`tail -5 /tmp/subscriber.log`
+
+Harus muncul `menunggu pesan di sensors/#`.
+
+**IP hilang setelah VM restart.** Di VM Target:
+
+`ip a | grep 192.168.5`
+
+`sudo netplan apply`
+
+**Kibana tidak mau terbuka.** Jangan buang waktu di depan penonton. Katakan bahwa layanan monitoring sedang tidak aktif, lalu lanjut ke skenario berikutnya. Tiga skenario tetap bisa diperagakan tanpa Kibana.
 
 ---
 
-## Urutan demo besok, ringkas
+# Bagian 6 - Jebakan yang sudah terbukti
 
-| Menit | Yang dilakukan | Siapa |
-| --- | --- | --- |
-| 0-3 | Buka tiga VM, tunjukkan alamat dan topologi | Lead |
-| 3-8 | Skenario 1, nmap penuh, tunjukkan tiga port | Red Team |
-| 8-13 | Skenario 2, MySQL timeout dan Hydra ditolak | Red Team |
-| 13-18 | Tunjukkan fail2ban memblokir, buka Kibana | Blue Team |
-| 18-25 | Skenario 3, SQL injection bocor, MQTT disisipi data palsu | Red Team |
-| 25-30 | Tunjukkan dashboard menampilkan data palsu | Red Team |
-| 30-35 | Tukar aplikasi ke versi aman, restart | Blue Team |
-| 35-40 | Ulangi payload, tunjukkan hasil kosong | Red Team |
-| 40-45 | Rekap: yang tertutup, yang masih terbuka | Lead |
-
----
-
-## Jebakan yang sudah pernah kena
-
-1. Berkas perbaikan tidak pernah sampai ke target karena folder bersama tidak terpasang. Kalau menyalin berkas, salin langsung di dalam VM, jangan andalkan folder bersama.
-2. Mosquitto memuat konfigurasi sesuai urutan abjad. Periksa nilai efektif, bukan berkas yang baru ditulis.
-3. Muncul `ERROR 1142` saat menghapus data, karena `app_iot` tidak punya hak DELETE. Untuk demo, hapus pakai akun root.
-4. Waktu di Kibana memakai UTC, sedangkan catatan tim memakai WIB. Selisih tujuh jam, bukan sesi berbeda.
-5. Kalau MQTT tiba-tiba menolak koneksi, cek apakah ada yang memindahkan `pb15-awal.conf`. Berkas itu yang membuat konfigurasi aman tidak berlaku.
+1. Alamat localhost di VM Attacker berarti Attacker itu sendiri. Semua serangan memakai `192.168.5.5`.
+2. `pkill` tidak ada di image Target, pakai `killall -f`.
+3. `mosquitto_sub -5` bukan opsi yang sah. Cukup `-t 'sensors/#' -C 1 -W 3`. Hasil `Timed out` berarti koneksi diterima, bukan gagal.
+4. Tanpa baris `listener` di `default.conf`, Mosquitto hanya mendengarkan di loopback dan semua klien jaringan dapat `Connection refused`.
+5. Salinan berkas memakai `cp`, jangan menimpa `app.py.aman` dengan `app.py` yang sedang rentan. Itu yang bikin versi aman hilang kemarin.
+6. Menghapus data butuh akun root. `app_iot` tidak punya hak DELETE dan akan menghasilkan `ERROR 1142`.
+7. Kibana memakai UTC, catatan tim memakai WIB, selisih tujuh jam. Jangan mengira itu sesi berbeda.
+8. Menuliskan perintah dengan tanda kutip lewat chat berisiko terpotong saat disalin. Ketik SQL langsung di prompt mysql.
