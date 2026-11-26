@@ -1,6 +1,6 @@
 # Incident Report Final
 
-**Simulasi Insiden Keamanan pada Replika Sistem Monitoring Kandang Ayam Berbasis IoT**
+**Simulasi Insiden Keamanan pada Replika Sistem Sprinkler Otomatis Berbasis Indeks Suhu-Kelembapan dan Visi Komputer untuk Mitigasi Stres Panas Sapi Perah**
 
 Kelompok 5 - Skenario 05 Internal Database Fortress
 TEK1314 Keamanan Siber - D4 Teknologi Rekayasa Komputer
@@ -19,7 +19,7 @@ Tanggal penyusunan: 25 November 2026
 
 ### 1.1 Sistem yang dilindungi
 
-Kelompok 5 menguji replika sistem monitoring kandang ayam berbasis mikrokontroler ESP32. Pada produk aslinya, sensor suhu dan kelembapan mengirim pembacaan ke Firebase Realtime Database, dan pemilik kandang memantau kondisi lewat aplikasi. Ketergantungan pada layanan pihak ketiga membuat sistem itu sulit diperiksa secara internal, sehingga untuk keperluan pengujian dibangun replika yang seluruh komponennya berdiri sendiri di dalam satu jaringan terkendali.
+Kelompok 5 menguji replika sistem sprinkler otomatis untuk mitigasi stres panas sapi perah berbasis mikrokontroler ESP32. Pada produk aslinya, sensor suhu dan kelembapan mengirim pembacaan ke Firebase Realtime Database, indeks suhu-kelembapan dihitung dari kedua nilai itu, kamera memantau perilaku ternak, dan peternak memantau kondisi lewat aplikasi. Ketergantungan pada layanan pihak ketiga membuat sistem itu sulit diperiksa secara internal, sehingga untuk keperluan pengujian dibangun replika yang seluruh komponennya berdiri sendiri di dalam satu jaringan terkendali.
 
 Replika tersebut terdiri atas empat layanan yang berjalan pada satu host Linux: SSH untuk administrasi, dashboard web Flask pada port 3000 untuk menampilkan pembacaan sensor, broker MQTT Mosquitto pada port 1883 sebagai jalur masuk data dari perangkat, dan basis data MySQL pada port 3306 sebagai penyimpan. Pembacaan sensor masuk lewat MQTT, ditangkap oleh proses subscriber, lalu ditulis ke tabel `sensor_readings`, dan dashboard membacanya kembali untuk ditampilkan.
 
@@ -27,7 +27,7 @@ Lingkungan uji dibentuk dari tiga mesin virtual pada satu segmen layer 2 terisol
 
 ### 1.2 Insiden yang disimulasikan
 
-Insiden yang disimulasikan adalah pengambilalihan jalur data pada sistem monitoring. Skenario ini dipilih karena memotret kegagalan yang paling sering terjadi pada proyek IoT mahasiswa: aplikasi dibangun dengan fokus pada fungsi, sementara asumsi keamanan diserahkan pada lingkungan yang dianggap tertutup.
+Insiden yang disimulasikan adalah pengambilalihan jalur data pada sistem sprinkler otomatis. Skenario ini dipilih karena memotret kegagalan yang paling sering terjadi pada proyek IoT mahasiswa: aplikasi dibangun dengan fokus pada fungsi, sementara asumsi keamanan diserahkan pada lingkungan yang dianggap tertutup.
 
 Rangkaian serangan dijalankan dalam tiga skenario berurutan sesuai `attack_plan.md`. Skenario pertama adalah pengintaian seluruh 65535 port untuk memetakan layanan yang hidup. Skenario kedua adalah percobaan pengambilalihan kredensial pada basis data dan SSH. Skenario ketiga adalah eksploitasi pada dua permukaan yang tersisa, yaitu SQL injection pada endpoint dashboard dan penyisipan data palsu lewat broker MQTT tanpa autentikasi.
 
@@ -53,7 +53,7 @@ Satu hal perlu dinyatakan terbuka. Konfigurasi autentikasi MQTT sudah ditulis de
 | Kemampuan pulih | Tinggi. Perbaikan bersifat konfigurasi dan kode, tanpa kehilangan data permanen |
 | Prioritas penanganan | Tinggi untuk integritas data, mengingat keputusan operasional bergantung pada angka yang ditampilkan |
 
-Alasan penetapan dampak informasi pada tingkat sedang, bukan tinggi, adalah karena seluruh data di dalam replika bersifat dummy dan tidak mengandung identitas pribadi. Bila replika ini dipertemukan dengan data kandang nyata, tingkatannya naik menjadi tinggi, dan itulah yang menjadi dasar seluruh rekomendasi pada Bagian 7.
+Alasan penetapan dampak informasi pada tingkat sedang, bukan tinggi, adalah karena seluruh data di dalam replika bersifat dummy dan tidak mengandung identitas pribadi. Bila replika ini dipertemukan dengan data peternakan nyata, tingkatannya naik menjadi tinggi, dan itulah yang menjadi dasar seluruh rekomendasi pada Bagian 7.
 
 ---
 
@@ -81,7 +81,7 @@ Bagian ini menjelaskan mengapa replika dibangun dengan komponen yang berbeda dar
 | --- | --- | --- | --- |
 | ESP32 dengan sensor suhu dan kelembapan | Publisher MQTT dari mesin penyerang dan skrip uji | Tidak ada perangkat fisik pada lingkungan uji | Setara pada sisi protokol. Perangkat nyata mengirim ke topik, replika juga |
 | Firebase Realtime Database | Broker Mosquitto dan MySQL | Firebase adalah layanan terkelola yang tidak bisa diperiksa konfigurasinya | Setara pada pola, tidak setara pada implementasi. Firebase tidak memiliki konsep port terbuka atau berkas kata sandi |
-| Aplikasi pemantauan pemilik kandang | Dashboard Flask pada port 3000 | Antarmuka asli berbasis klien, sedangkan replika memakai web server sendiri agar jalur query bisa diperiksa | Setara pada fungsi tampilan, berbeda pada teknologi |
+| Aplikasi pemantauan peternak | Dashboard Flask pada port 3000 | Antarmuka asli berbasis klien, sedangkan replika memakai web server sendiri agar jalur query bisa diperiksa | Setara pada fungsi tampilan, berbeda pada teknologi |
 | Autentikasi akun Firebase | Akun `app_iot` pada MySQL dan akun sistem `fattih` | Tidak ada penyedia identitas pada replika | Sebagian. Replika menguji hak akses basis data, bukan alur login pengguna akhir |
 | Log layanan terkelola | rsyslog yang meneruskan ke Security Onion | Layanan terkelola menyediakan log sendiri, replika harus membangun jalurnya | Setara pada tujuan, berbeda pada kelengkapan |
 
@@ -286,7 +286,7 @@ Dan yang paling penting, dashboard menampilkannya di posisi teratas tanpa penand
 
 ![Dashboard menampilkan data palsu di posisi teratas, tanpa tanda bahwa data itu tidak sah.](lampiran/SS-20-dashboard-palsu.png)
 
-Di titik ini insidennya menjadi nyata. Bukan karena data dicuri, melainkan karena data operasional tidak lagi bisa dipercaya. Pemilik kandang yang membaca dashboard akan menyimpulkan suhu kandang 99.90 derajat, dan mengambil keputusan berdasarkan angka yang dibuat orang lain.
+Di titik ini insidennya menjadi nyata. Bukan karena data dicuri, melainkan karena data operasional tidak lagi bisa dipercaya. Peternak yang membaca dashboard akan menyimpulkan suhu 99.90 derajat, dan mengambil keputusan berdasarkan angka yang dibuat orang lain.
 
 Ada satu detail yang perlu dicatat untuk ketepatan analisis. Baris palsu sempat muncul tiga kali, dan penyebabnya bukan tiga kali pengiriman, melainkan tiga proses subscriber yang berjalan bersamaan. Setiap proses menulis pesan yang sama secara mandiri. Ini bukan bagian dari serangan, melainkan kesalahan operasional pada saat pengujian, dan sengaja dicatat agar jumlah baris tidak disalahartikan sebagai jumlah serangan.
 
@@ -540,13 +540,13 @@ Bagian ini berada di luar lingkup penilaian PBL, tetapi disusun karena temuan pa
 
 **Validasi di sisi penerima, bukan hanya di sisi pengirim.** Subscriber pada replika menerima `device_id` dari nama topik tanpa daftar putih. Pola ini berbahaya karena mengandalkan kepatuhan pengirim. Penerima harus memverifikasi bahwa identitas yang dikirim sesuai dengan kredensial yang dipakai. Prinsipnya sederhana: jangan percaya klaim identitas yang datang bersama data.
 
-**Tetapkan rentang nilai yang wajar dan tolak yang di luar rentang.** Data palsu pada pengujian ini berisi suhu 99.90 derajat pada kandang ayam, yang secara fisik tidak mungkin. Pemeriksaan sederhana terhadap rentang nilai akan menolaknya sebelum masuk basis data. Ini kontrol murah yang menutup seluruh kelas serangan penyisipan data, bukan hanya satu payload tertentu.
+**Tetapkan rentang nilai yang wajar dan tolak yang di luar rentang.** Data palsu pada pengujian ini berisi suhu 99.90 derajat, yang secara fisik tidak mungkin pada peternakan sapi perah. Pemeriksaan sederhana terhadap rentang nilai akan menolaknya sebelum masuk basis data. Ini kontrol murah yang menutup seluruh kelas serangan penyisipan data, bukan hanya satu payload tertentu.
 
 **Bangun jalur deteksi sejak awal, jangan setelah insiden.** Pada proyek ini, kemampuan deteksi baru dibangun ketika serangan sudah berjalan, dan hasilnya belum memadai untuk lapisan aplikasi. Untuk produk asli, log akses dan log perubahan data harus sudah mengalir ke satu tempat sejak hari pertama, dengan aturan yang mengenali pola penyalahgunaan.
 
 **Buat prosedur pembersihan data yang terbatas dan tercatat.** Bila data palsu masuk ke sistem nyata, tim operasional harus bisa menghapusnya tanpa memakai akun super, dan setiap penghapusan harus tercatat. Tanpa prosedur ini, pilihan yang tersedia hanya dua, yaitu membiarkan data palsu atau memberi hak hapus yang terlalu luas kepada aplikasi.
 
-**Pisahkan data operasional dari data uji.** Seluruh data pada replika bersifat dummy, sehingga dampak insiden terbatas. Pada sistem nyata, data kandang berkaitan dengan keputusan usaha. Pemisahan jalur, kredensial, dan basis data antara lingkungan uji dan produksi bukan formalitas, melainkan pengaman agar kesalahan pengujian tidak menjadi kerugian nyata.
+**Pisahkan data operasional dari data uji.** Seluruh data pada replika bersifat dummy, sehingga dampak insiden terbatas. Pada sistem nyata, data suhu dan kelembapan menentukan kapan sprinkler menyala, sehingga berkaitan langsung dengan kesejahteraan ternak dan keputusan usaha. Pemisahan jalur, kredensial, dan basis data antara lingkungan uji dan produksi bukan formalitas, melainkan pengaman agar kesalahan pengujian tidak menjadi kerugian nyata.
 
 ### 7.6 Penutup
 

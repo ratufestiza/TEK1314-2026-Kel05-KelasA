@@ -11,7 +11,7 @@
 
 Kelompok 5 membangun lingkungan uji keamanan yang terdiri dari tiga entitas: **Attacker Node**, **Target Node**, dan **Monitoring Node**.
 
-Target Node bukan sistem produksi mitra, melainkan **replika tech stack** produk IoT kelompok, yaitu sistem monitoring kandang ayam berbasis ESP32 yang pada aslinya memakai Firebase Realtime Database. Pada replika, layanan tersebut berdiri sendiri sehingga dapat diperiksa dan diperketat: SSH, dashboard web Flask, broker MQTT, dan basis data MySQL. Seluruh data bersifat dummy.
+Target Node bukan sistem produksi mitra, melainkan **replika tech stack** produk IoT kelompok, yaitu sistem sprinkler otomatis berbasis indeks suhu-kelembapan dan visi komputer untuk mitigasi stres panas sapi perah, yang pada aslinya memakai Firebase Realtime Database. Pada replika, layanan tersebut berdiri sendiri sehingga dapat diperiksa dan diperketat: SSH, dashboard web Flask, broker MQTT, dan basis data MySQL. Seluruh data bersifat dummy.
 
 Topologi yang dipakai adalah star topology dalam satu segmen LAN 192.168.5.0/24 yang terisolasi, sehingga pengujian tidak menyentuh jaringan kampus maupun sistem mitra.
 
