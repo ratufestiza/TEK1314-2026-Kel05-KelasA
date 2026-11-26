@@ -1,8 +1,6 @@
 # Script Video Demo Purple Team
 
-Naskah narasi presentasi. Urutan ikut `demo-dari-awal.md`.
-
-Perintah tampil di layar, narasi bicara di atasnya. Audiens tidak perlu tahu fungsi tiap opsi.
+Naskah narasi gaya presentasi, pakai "kita". Urutan ikut `demo-dari-awal.md`.
 
 ---
 
@@ -12,21 +10,23 @@ Perintah tampil di layar, narasi bicara di atasnya. Audiens tidak perlu tahu fun
 
 **Narasi:**
 
-Selamat malam. Kami Kelompok 5, skenario 05, Internal Database Fortress.
+Assalamualaikum warahmatullahi wabarakatuh. Perkenalkan nama saya Fattih, dari Kelompok 5, skenario 05, Internal Database Fortress.
 
-Sistem yang kami bangun adalah sprinkler otomatis untuk kandang sapi perah. Sensor membaca suhu dan kelembapan, data masuk ke basis data, lalu ditampilkan di dashboard.
+Jadi di sini saya akan mempresentasikan simulasi purple team, mulai dari serangan, deteksi, mitigasi, sampai verifikasi ulang.
 
-Kalau data itu dipalsukan, penyiram bisa menyala di waktu yang salah. Untuk ternak, itu bukan gangguan kecil.
+Sistem yang kami buat ini sprinkler otomatis buat kandang sapi perah. Sensornya baca suhu dan kelembapan, datanya masuk ke database, terus ditampilin di dashboard.
 
-Karena itu, yang kami uji bukan sensornya, melainkan jalur datanya.
+Nah kalau data sensornya dipalsuin, penyiramnya bisa nyala di waktu yang salah. Buat ternak itu bahaya.
 
-Pengujian berlangsung di tiga mesin dalam satu segmen tertutup: target, penyerang, dan pemantau.
+Jadi yang kami uji di sini bukan sensornya, tapi jalur datanya.
 
-Metodenya purple team. Setelah serangan, kami menyiapkan mitigasi, lalu mengulang serangan yang sama. Kalau hanya menyerang, itu red team. Yang membedakan ada di pengulangan terakhir.
+Ada tiga mesin. Target di 192.168.5.5, attacker di 192.168.5.100, dan onion di 192.168.5.200.
+
+Kenapa purple team? Karena setelah kita nyerang, kita juga siapin mitigasinya, terus kita serang lagi buat buktiin mitigasinya jalan. Kalau cuma nyerang doang, itu red team. Bedanya di pengulangan terakhir.
 
 ---
 
-## SCENE 2 - Menyalakan mesin
+## SCENE 2 - Nyalakan mesin
 
 **Layar:** terminal host.
 
@@ -41,13 +41,15 @@ Metodenya purple team. Setelah serangan, kami menyiapkan mitigasi, lalu mengulan
 
 **Narasi:**
 
-Ketiga mesin dinyalakan dengan urutan target lebih dulu, pemantau terakhir, karena mesin pemantau paling lama mencapai kondisi siap.
+Baiklah, pertama-tama kita nyalain dulu ketiga mesinnya.
 
-Semuanya berada di satu segmen internal tanpa akses internet, jadi seluruh pengujian berlangsung tertutup.
+Urutannya target dulu, terus attacker, terakhir onion, karena onion paling lama bootingnya.
+
+Kalau sudah, kita cek pakai list runningvms, harusnya keluar tiga.
 
 ---
 
-## SCENE 3 - Mengembalikan kondisi target
+## SCENE 3 - Balikin target ke kondisi rentan
 
 **Layar:** jendela AYAM.
 
@@ -59,21 +61,21 @@ sudo bash /tmp/purple.sh reset
 
 **Narasi:**
 
-Sebelum pengujian, mesin target dikembalikan ke kondisi sebelum mitigasi.
+Sebelum mulai, kita balikin dulu mesin target ke kondisi sebelum mitigasi.
 
-Tanpa langkah ini, serangan tidak akan berhasil, dan tidak ada yang bisa dibuktikan. Pengujian harus dimulai dari kondisi yang memang rentan.
+Ini penting. Kalau enggak dimulai dari kondisi rentan, serangannya enggak bakal jalan, dan enggak ada yang bisa dibuktiin.
 
-Prosesnya mengembalikan berkas aplikasi versi lama, membuka layanan pesan, membersihkan data uji dari sesi sebelumnya, dan memastikan tidak ada blokir yang tertinggal.
+Di sini kita pakai script purple.sh reset. Jadi dia bakal matiin proses lama, pasang aplikasi versi rentan, buka MQTT, hapus data palsu, buka blokiran fail2ban, terus nyalain lagi aplikasinya.
 
-Satu hal yang paling sering terlewat: proses lama harus dihentikan lebih dulu. Kalau berkas diganti sementara aplikasi masih berjalan, aplikasi tetap memakai kode yang sudah masuk ke memori. Berkasnya benar, perilakunya tidak berubah.
+Nah yang paling penting itu matiin proses lamanya dulu. Soalnya kalau file-nya diganti tapi aplikasinya masih jalan, dia tetep pakai kode lama yang udah ada di memori. Jadi keliatan bener, tapi kelakuannya masih rentan.
 
-Di akhir, skrip memastikan aplikasi benar-benar berjalan dalam kondisi rentan. Kalau statusnya masih terbaca aman, pengujian tidak dilanjutkan.
+Kalau sudah, kita cek hasilnya. Harusnya 1483 byte, query normal 2 baris, terus payload injeksi 4 baris dengan tulisan mode rentan. Kalau tulisannya mode aman, berarti ada yang salah.
 
 ---
 
-## SCENE 4 - Titik pemantauan
+## SCENE 4 - Merekam dari onion
 
-**Layar:** jendela Onion.
+**Layar:** jendela onion.
 
 **Aksi:**
 
@@ -84,19 +86,25 @@ sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap -U
 
 **Narasi:**
 
-Pengujian dimulai dari titik pemantauan, karena seluruh rangkaian serangan harus terekam.
+Baiklah, sekarang kita masuk ke bagian onion dulu.
 
-Perekaman dijalankan pada antarmuka yang terhubung ke segmen yang sama dengan target dan penyerang. Dengan begitu, semua lalu lintas di antara keduanya ikut terlihat, tanpa perlu memasang apa pun di mesin penyerang.
+Jadi sebelum kita nyerang, kita harus mulai merekam dulu dari sini, biar nanti serangan dari attacker ke target bisa kedetect di onion.
 
-Rekaman ini dimulai sebelum serangan pertama, bukan sesudahnya. Alasannya, sensor di lab ini bekerja dengan menganalisis berkas tangkapan, bukan memantau kabel secara langsung. Kalau rekaman tidak dimulai dari awal, tahap deteksi tidak akan punya data apa pun.
+Pertama kita cek identitas onionnya dulu, pakai ip -br a. Nah terlihat di sini IP onion itu 192.168.5.200, dan interface-nya eth2.
 
-Selama proses berjalan, layar tidak menampilkan apa pun. Rekamannya tetap berjalan, hanya saja hasilnya masuk ke berkas, bukan ke tampilan. Kami biarkan sampai seluruh rangkaian serangan selesai.
+Setelah itu kita masuk ke command untuk merekam, yaitu tcpdump, dengan interface eth2, terus hasilnya kita simpan ke file /tmp/pbl5-demo.pcap.
+
+Nah kalau sudah, layarnya memang bakal kosong. Itu normal, karena hasilnya masuk ke file, bukan ditampilin di layar. Jadi kita biarin aja dulu, jangan dihentikan, sampai semua serangannya selesai.
+
+Ini harus dimulai dari sekarang, karena sensor di onion ini mode import. Jadi dia enggak nonton kabel langsung, dia cuma bisa analisis file yang nanti kita import.
+
+Kalau sudah, kita lanjut ke bagian nmap.
 
 ---
 
-## SCENE 5 - Pemetaan layanan
+## SCENE 5 - Nmap
 
-**Layar:** jendela Attacker.
+**Layar:** jendela attacker.
 
 **Aksi:**
 
@@ -106,19 +114,21 @@ nmap -sS -sV -p- 192.168.5.5
 
 **Narasi:**
 
-Tahap pertama adalah pemetaan layanan. Kami ingin tahu permukaan serangan yang tersisa setelah hardening: port apa yang masih terbuka, dan versi apa yang dipakai.
+Sekarang kita pindah ke mesin attacker. Yang pertama kita lakuin itu scanning, buat lihat port apa aja yang masih kebuka di target.
 
-Hasilnya tiga port. Dua untuk administrasi dan pertukaran data, satu untuk dashboard. Basis data tidak muncul sama sekali.
+Hasilnya tiga port. 22 untuk SSH, 1883 untuk MQTT, dan 3000 untuk dashboard. Port 3306, MySQL, enggak muncul.
 
-Yang perlu dicatat, basis datanya tetap berjalan. Yang berubah hanya keterlihatannya dari jaringan.
+Sebelum hardening dulu lima port kebuka, lengkap sama versinya. Jadi sekarang yang penting bukan yang muncul, tapi yang hilang.
 
-Waktu pemindaian juga meningkat dari sekitar dua puluh detik menjadi hampir delapan ratus detik. Paket ke port yang tidak diizinkan dibuang tanpa jawaban, jadi penyerang menghabiskan waktu tanpa memperoleh apa pun.
+Waktunya juga beda jauh. Dulu sekitar dua puluh detik, sekarang hampir delapan ratus detik. Karena port yang enggak dipakai udah ditutup, dan ufw buang paket ke port yang enggak diizinin.
+
+Kalau sudah, kita lanjut ke bagian kredensial.
 
 ---
 
-## SCENE 6 - Jalur autentikasi
+## SCENE 6 - Kredensial
 
-**Layar:** jendela Attacker, lalu AYAM.
+**Layar:** jendela attacker, lalu AYAM.
 
 **Aksi:**
 
@@ -130,19 +140,25 @@ sudo fail2ban-client status sshd
 
 **Narasi:**
 
-Tahap kedua menyasar jalur autentikasi.
+Sekarang kita coba ke jalur kredensialnya.
 
-Sambungan langsung ke basis data berakhir tanpa jawaban. Ini berbeda dari penolakan. Penolakan berarti ada layanan yang menjawab, sedangkan tanpa jawaban berarti dari sisi penyerang tidak ada apa pun di sana.
+Pertama kita tes port MySQL-nya langsung. Hasilnya timeout, bukan refused.
 
-Untuk SSH, percobaan tebak kata sandi berhenti pada tahap negosiasi, karena layanan hanya menerima kunci. Artinya tidak ada satu kata sandi pun yang benar-benar diuji, sehingga kami tidak menyimpulkan apa pun tentang kekuatan kata sandi di mesin ini.
+Bedanya apa? Kalau refused, artinya ada yang nolak, jadi kita tau di situ ada layanan. Kalau timeout, paketnya dibuang diem-diem, jadi dari sisi kita kayak enggak ada apa-apa. Itu karena MySQL-nya cuma denger di localhost.
 
-Di sisi pertahanan, ada pencatatan dan pemblokiran otomatis terhadap alamat yang gagal berulang kali. Jadi ada dua lapis: jalur masuknya ditutup, dan percobaan yang tetap datang dicatat.
+Terus kita coba brute force SSH pakai hydra. Hasilnya ditolak sebelum sempet nyoba password, karena SSH-nya cuma nerima key.
+
+Karena enggak ada satu pun password yang beneran diuji, kita stop di sini. Jadi kita enggak bisa nyimpulin apa-apa soal kekuatan password-nya.
+
+Terakhir kita cek fail2ban di target. Jadi selain SSH-nya cuma nerima key, ada juga yang nyatet percobaan gagal terus ngeblokir IP-nya.
+
+Kalau sudah, kita lanjut ke bagian SQL injection.
 
 ---
 
-## SCENE 7 - Lapisan aplikasi
+## SCENE 7 - SQL injection
 
-**Layar:** jendela Attacker.
+**Layar:** jendela attacker.
 
 **Aksi:**
 
@@ -154,25 +170,27 @@ curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"
 
 **Narasi:**
 
-Tahap ketiga menyasar lapisan aplikasi, dan ini temuan utama kami.
+Nah ini bagian yang paling penting, lapisan aplikasinya.
 
-Permintaan normal mengembalikan dua baris, sesuai perangkat yang diminta.
+Pertama kita lakuin yang normal dulu, nanya data sensor-01. Hasilnya dua baris. Bener, enggak ada yang aneh.
 
-Ketika parameter diubah menjadi kondisi yang selalu benar, seluruh isi tabel terbuka.
+Sekarang kita masukin payload. %27 itu tanda kutip, %20 itu spasi, jadi kalau dibaca isinya x' OR '1'='1. Hasilnya empat baris, semua isi tabel keluar.
 
-Ketika diubah menjadi kondisi yang selalu salah, hasilnya kosong.
+Kenapa bisa? Karena aplikasinya nyambungin input kita langsung ke dalam query. Jadi tanda kutipnya nutup string, terus OR '1'='1' itu dibaca sebagai perintah, bukan sebagai nama perangkat.
 
-Tiga respons berbeda dari satu parameter yang sama. Ini menunjukkan bahwa masukannya mengubah logika query, bukan sekadar tampilan halaman.
+Terus yang ketiga kita ganti jadi AND '1'='2'. Hasilnya nol.
 
-Kalau hanya ditunjukkan kasus pertama, hasilnya masih bisa diperdebatkan sebagai kebetulan. Hasil kosong pada kasus ketiga menutup perdebatan itu.
+Nah tiga hasil ini yang mau saya tunjukin. Dua, empat, nol. Kalau cuma nunjukin yang OR doang, bisa dibilang kebetulan. Tapi begitu AND hasilnya nol, enggak bisa dibilang kebetulan lagi. Berarti beneran logika query-nya yang kita ubah.
 
-Ada satu kebocoran tambahan. Bentuk keluarannya masih format mentah bahasa pemrograman, sehingga struktur dan tipe kolom ikut terbaca dari luar.
+Satu lagi, coba perhatiin bentuk outputnya. Bukan JSON, tapi format mentah Python. Jadi urutan sama tipe kolomnya ikut kebaca dari luar.
+
+Kalau sudah, kita lanjut ke bagian MQTT.
 
 ---
 
-## SCENE 8 - Kepercayaan pada data
+## SCENE 8 - Data palsu lewat MQTT
 
-**Layar:** dua terminal Attacker, lalu AYAM, lalu browser.
+**Layar:** dua terminal attacker, lalu AYAM, lalu browser.
 
 **Aksi:**
 
@@ -184,21 +202,27 @@ tail -3 /var/log/iot/subscriber.log
 
 **Narasi:**
 
-Skenario yang sama juga membuka jalur kedua: penyisipan data.
+Sekarang bagian kedua, bukan nyuri data, tapi ngerusak kepercayaan ke datanya.
 
-Layanan pesan menerima pengirim tanpa identitas, sehingga satu pesan bisa masuk seolah berasal dari perangkat yang sah.
+Di terminal kiri kita mantau, di terminal kanan kita kirim pesan. Enggak ada password, enggak ada penolakan, langsung masuk.
 
-Kami mengirim pembacaan atas nama perangkat yang tidak pernah ada. Data itu tercatat, dan langsung tampil di dashboard tanpa penanda apa pun.
+Terus kita cek di mesin target. Datanya tersimpan, sensor-99 dengan suhu 99.9.
 
-Suhu yang dikirim mustahil untuk ternak, tetapi sistem memperlakukannya sama seperti data asli.
+Sensor-99 itu enggak ada. Kita ngarang namanya. Tapi subscriber percaya aja, langsung disimpen kayak data beneran.
 
-Di titik ini, masalahnya bukan pencurian data, melainkan hilangnya kepercayaan pada data. Sistem yang mengambil keputusan dari data palsu bisa lebih berbahaya daripada sistem yang berhenti.
+Coba kita buka dashboard-nya. Ada baris baru di paling atas, suhu 99.9. Buat sapi itu enggak masuk akal, suhu normalnya sekitar 38. Kalau sistem ini dipakai beneran, penyiramnya bakal nyala terus.
+
+Dan yang paling bahaya, di dashboard enggak ada tanda apa-apa. Datanya kelihatan sama persis kayak data asli.
+
+Jadi masalahnya bukan datanya dicuri, tapi datanya udah enggak bisa dipercaya. Sistem yang ngambil keputusan dari data salah bisa lebih bahaya daripada sistem yang mati.
+
+Kalau sudah, kita balik lagi ke onion buat analisis.
 
 ---
 
-## SCENE 9 - Analisis
+## SCENE 9 - Stop rekam, import
 
-**Layar:** jendela Onion.
+**Layar:** jendela onion.
 
 **Aksi:**
 
@@ -209,15 +233,19 @@ sudo so-import-pcap /tmp/pbl5-demo.pcap
 
 **Narasi:**
 
-Setelah rangkaian serangan selesai, perekaman dihentikan dan berkas tangkapan dimasukkan ke sensor.
+Sekarang kita balik ke onion. Serangannya udah selesai, jadi rekamannya kita hentikan dulu.
 
-Proses ini memerlukan waktu, karena berkas dibaca ulang oleh dua mesin analisis, lalu hasilnya dimasukkan ke basis data pencarian.
+Terus kita cek paketnya ada berapa. Kalau nol, berarti rekamannya gagal.
 
-Konsekuensinya, analisis dalam metode kami berjalan setelah serangan, bukan saat serangan berlangsung. Itu keterbatasan yang kami catat, bukan yang kami sembunyikan.
+Kalau sudah, kita import ke sensornya. Ini yang makan waktu, bisa lima sampai lima belas menit. Jadi kalau layarnya diem lama, itu normal, jangan dihentikan.
+
+Di belakang dia mecah file-nya, baca ulang pakai Suricata sama Zeek, terus masukin hasilnya ke Elasticsearch.
+
+Kalau sudah selesai, kita buka Kibana.
 
 ---
 
-## SCENE 10 - Deteksi
+## SCENE 10 - Deteksi di onion
 
 **Layar:** Kibana, Discover.
 
@@ -229,17 +257,23 @@ Konsekuensinya, analisis dalam metode kami berjalan setelah serangan, bukan saat
 
 **Narasi:**
 
-Hasil analisis menampilkan lalu lintas antara mesin penyerang dan mesin target.
+Di Kibana kita masuk ke Discover, pilih index pattern yang ada tulisan logstash-nya, terus rentang waktunya kita lebarkan ke dua puluh empat jam terakhir.
 
-Yang tercatat adalah pola koneksi: port tujuan, jumlah data, dan status penyelesaian. Status yang terbaca menunjukkan koneksi selesai dengan normal, artinya server memang membalas.
+Ini penting. Kalau rentangnya kesempitan, hasilnya kosong, padahal import-nya berhasil. Soalnya data import bawa waktu asli rekamannya, bukan waktu kita import.
 
-Ada dua batas yang perlu kami sampaikan.
+Terus kita saring pakai pencarian teks biasa, "192.168.5.100" AND "192.168.5.5". Kita sengaja enggak pakai filter kolom, karena nama kolom di versi ini beda sama versi baru. Kalau salah ngetik, Kibana malah error.
 
-Pertama, karena sensor bekerja dari berkas tangkapan, ada jeda antara serangan dan hasil analisis.
+Hasilnya keluar log Zeek. Ada port, jumlah byte, sama status koneksinya. Statusnya SF, artinya koneksinya selesai normal, servernya beneran bales.
 
-Kedua, yang terekam adalah bentuk lalu lintas, bukan isi serangan. Tidak ada aturan yang mengenali injeksi pada parameter, dan tidak ada yang mengenali penyisipan pesan. Jadi kedua serangan tadi tidak muncul sebagai peringatan.
+Nah di sini saya juga mau jujur soal batasnya. Ada dua.
 
-Deteksi kami kuat di lapisan jaringan dan lemah di lapisan aplikasi. Itu kami catat sebagai kekurangan, dan menjadi pekerjaan berikutnya.
+Pertama, karena sensor kami mode import, jadi ada jeda antara serangan sama hasil analisisnya.
+
+Kedua, yang kelihatan di sini bentuk lalu lintasnya, bukan isi serangannya. SQL injection di URL enggak keliatan sebagai alert, karena enggak ada rule yang ngenalin. MQTT juga hampir enggak keliatan.
+
+Jadi deteksi kami bagus di lapisan jaringan, tapi lemah di lapisan aplikasi. Itu yang kami catat sebagai kekurangan, bukan kami diemin.
+
+Kalau sudah, kita lanjut ke mitigasi.
 
 ---
 
@@ -255,19 +289,27 @@ sudo bash /tmp/purple.sh mitigasi
 
 **Narasi:**
 
-Mitigasi dilakukan pada lapisan aplikasi.
+Sekarang kita masuk ke mitigasinya.
 
-Aplikasi dihentikan lebih dulu, berkasnya diganti, baru dijalankan kembali. Urutan ini bukan formalitas. Proses yang berjalan menyimpan kode di memori, jadi penggantian berkas saat aplikasi masih hidup tidak mengubah perilakunya.
+Di sini kita pakai script lagi, isinya tiga langkah. Matiin aplikasinya dulu, timpa file-nya pakai versi aman, terus nyalain lagi.
 
-Setelah penggantian, masukan tidak lagi disambung ke dalam query, melainkan dikirim sebagai nilai terpisah. Basis data menerimanya sebagai data, dan tidak akan pernah membacanya sebagai perintah.
+Kenapa harus mati dulu? Karena Python nyimpen kodenya di memori. Kalau file-nya diganti pas aplikasinya masih jalan, dia tetep pakai kode lama. Jadi file-nya udah bener, tapi kelakuannya masih rentan. Itu pernah kejadian waktu kita latihan, dan bikin bingung soalnya hasil tesnya gagal padahal file-nya udah diganti.
 
-Keluarannya juga diubah menjadi format terstruktur, sehingga struktur tabel tidak lagi terbaca dari luar.
+Terus apa aja yang berubah di versi aman? Ada tiga.
+
+Pertama, query-nya enggak nyambungin string lagi, tapi pakai parameter. Jadi input kita dikirim terpisah, dibaca sebagai data, bukan sebagai perintah.
+
+Kedua, outputnya sekarang JSON, jadi struktur tabelnya enggak kebocor lagi.
+
+Ketiga, debug-nya dimatiin, jadi kalau ada error enggak nampilin isi internal aplikasinya.
+
+Kalau sudah, kita balik lagi ke attacker buat verifikasi.
 
 ---
 
 ## SCENE 12 - Verifikasi
 
-**Layar:** jendela Attacker.
+**Layar:** jendela attacker.
 
 **Aksi:**
 
@@ -278,13 +320,17 @@ curl "http://192.168.5.5:3000/sensor?device=sensor-01"
 
 **Narasi:**
 
-Untuk membuktikan mitigasi, serangan yang sama diulang tanpa perubahan apa pun.
+Sekarang kita ulang serangannya. Payload-nya sama persis, enggak kita ubah sedikit pun.
 
-Hasilnya kosong.
+Hasilnya nol.
 
-Karena serangannya identik, perubahan hasil hanya bisa disebabkan oleh perubahan pada aplikasi. Kalau kami hanya menyatakan sudah dimitigasi, itu klaim. Dengan mengulang serangan yang sama, itu bukti.
+Nah ini intinya purple team. Kita enggak ngubah serangannya. Yang berubah cara aplikasinya nerima input. Jadi kalau hasilnya beda, berarti mitigasinya yang ngaruh.
 
-Pengujian juga dilakukan pada permintaan normal, untuk memastikan aplikasi tetap berfungsi dan tidak rusak oleh mitigasi.
+Kalau kita cuma bilang udah dimitigasi, itu klaim. Tapi dengan ngulang serangan yang sama dan nunjukin hasilnya berubah, itu bukti.
+
+Terus kita tes yang normal juga, buat mastiin aplikasinya masih jalan dan enggak rusak gara-gara mitigasi. Hasilnya dua baris, sekarang bentuknya JSON.
+
+Kalau sudah, kita masuk ke penutup.
 
 ---
 
@@ -294,28 +340,28 @@ Pengujian juga dilakukan pada permintaan normal, untuk memastikan aplikasi tetap
 
 **Narasi:**
 
-Kesimpulannya.
+Jadi kesimpulannya.
 
-Pemetaan layanan tertutup. Yang tersisa tiga port, dan basis data tidak terlihat dari jaringan.
+Scanning, tertutup. Tinggal tiga port, MySQL enggak keliatan dari jaringan.
 
-Jalur autentikasi tertutup. Basis data hanya menerima sambungan dari dalam mesin, SSH hanya menerima kunci, dan percobaan berulang diblokir otomatis.
+Kredensial, tertutup. MySQL cuma localhost, SSH cuma nerima key, fail2ban ngeblokir percobaan berulang.
 
-Injeksi pada lapisan aplikasi tertutup, dan terbukti lewat pengulangan serangan yang sama.
+SQL injection, tertutup, dan udah kita buktiin dengan ngulang payload yang sama.
 
-Penyisipan data lewat layanan pesan belum tuntas. Konfigurasi untuk menutupnya sudah disiapkan, tetapi belum terbukti berlaku penuh. Karena itu kami catat sebagai temuan terbuka.
+Yang MQTT, belum selesai. Konfigurasinya udah disiapin, tapi belum kita pastiin berlaku penuh. Jadi kita catat sebagai temuan terbuka.
 
-Kami memilih mencatatnya apa adanya, karena konfigurasi yang belum terbukti berlaku bukan mitigasi.
+Kita sengaja enggak bilang selesai, karena konfigurasi yang belum kebukti itu bukan mitigasi.
 
-Sekian, terima kasih.
+Sekian dari kami, terima kasih.
 
 ---
 
 # Catatan Produksi
 
-Rekam dua sesi kalau mau hemat waktu. Sesi 1 Scene 1 sampai 8, berhenti saat dashboard menampilkan data palsu. Sesi 2 Scene 9 sampai 13. Perekaman di mesin pemantau jangan dihentikan di antara dua sesi.
+Kalau mau hemat waktu, rekam dua sesi. Sesi pertama Scene 1 sampai 8, berhenti pas dashboard nampilin data palsu. Sesi kedua Scene 9 sampai 13. Tapi perekaman di onion jangan dihentikan di antara dua sesi.
 
 Jangan dipotong: Scene 3, Scene 7, Scene 12.
 
-Boleh dipotong: bagian menunggu pemindaian dan bagian menunggu analisis.
+Boleh dipotong: bagian nunggu nmap dan nunggu import.
 
-Kalau ada yang gagal, jangan disunting seolah berhasil. Kembalikan kondisi target, ulangi dari Scene 7.
+Kalau ada yang gagal, jangan disunting seolah berhasil. Balikin kondisi target, ulang dari Scene 7.
