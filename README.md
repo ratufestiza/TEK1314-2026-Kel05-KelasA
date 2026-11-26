@@ -3,10 +3,10 @@
 **Skenario:** 05 Internal Database Fortress
 **Mata Kuliah:** TEK1314 Keamanan Siber, Kelas A
 **Anggota:**
-1. Fattih Algie Maulana (J0404241002) - Lead Analyst
-2. Syamil Abdillah (J0404241139) - System/Network Engineer
-3. Ratu Festiza Alya Ichsan (J0404241174) - Security Analyst
-4. Al Fariz Muhammad Zibril (J0404241036) - Documentation
+1. Fattih Algie Maulana (J0404241002) - Blue Team
+2. Syamil Abdillah (J0404241139) - Red Team
+3. Ratu Festiza Alya Ichsan (J0404241174) - Lead
+4. Al Fariz Muhammad Zibril (J0404241036) - Red Team
 
 **Video demonstrasi:** https://youtu.be/b0riabC46ik
 **Dokumentasi pemasangan VM:** https://docs.google.com/document/d/1kLTl9QgCAbP9AlRmZ7LeZou6PkfrzocWbvTxVEbz9e0/edit?tab=t.0
