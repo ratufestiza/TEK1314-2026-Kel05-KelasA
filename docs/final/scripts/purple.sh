@@ -123,11 +123,51 @@ kasus_mitigasi() {
   fi
   hijau "  port 3000 lepas"
 
-  echo "[2] timpa berkas"
+  echo "[2] timpa berkas aplikasi"
   cp "$DIR/app.py.aman" "$DIR/app.py"
+  chown root:root "$DIR/app.py"
+  chmod 644 "$DIR/app.py"
   echo "  app.py sekarang $(stat -c%s "$DIR/app.py") byte"
 
-  echo "[3] nyalakan ulang"
+  echo "[3] tutup MQTT"
+  # Berkas lama yang memuat allow_anonymous true harus dipindahkan lebih dulu,
+  # karena dibaca terakhir dan akan menimpa konfigurasi baru.
+  if [ -f /etc/mosquitto/conf.d/pb15-awal.conf ]; then
+    mv /etc/mosquitto/conf.d/pb15-awal.conf /root/pb15-awal.conf.nonaktif
+    echo "  pb15-awal.conf dipindahkan ke /root"
+  fi
+  if [ ! -f /etc/mosquitto/passwd ]; then
+    touch /etc/mosquitto/passwd
+  fi
+  # Akun sensor dibuat sekali saja, sandi acak, tidak perlu diketahui penonton.
+  if ! grep -q "^sensor:" /etc/mosquitto/passwd 2>/dev/null; then
+    SANDI=$(head -c 24 /dev/urandom | base64 | tr -d '/+=')
+    mosquitto_passwd -b /etc/mosquitto/passwd sensor "$SANDI"
+    chown mosquitto:mosquitto /etc/mosquitto/passwd
+    chmod 640 /etc/mosquitto/passwd
+    hijau "  akun sensor dibuat"
+  else
+    hijau "  akun sensor sudah ada"
+  fi
+  cat > /etc/mosquitto/conf.d/default.conf <<'MQTT'
+listener 1883 0.0.0.0
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+MQTT
+  systemctl restart mosquitto
+  sleep 1
+  if grep -rq "allow_anonymous true" /etc/mosquitto/ 2>/dev/null; then
+    merah "  masih ada allow_anonymous true di /etc/mosquitto, cek: grep -r allow_anonymous /etc/mosquitto"
+  else
+    hijau "  tidak ada allow_anonymous true tersisa"
+  fi
+  if ss -tln | grep -q "0.0.0.0:1883"; then
+    hijau "  mosquitto jalan di 0.0.0.0:1883"
+  else
+    merah "  mosquitto tidak jalan, cek: systemctl status mosquitto"
+  fi
+
+  echo "[4] nyalakan ulang aplikasi"
   cd "$DIR" || exit 1
   setsid nohup python3 app.py > "$LOG/dashboard.log" 2>&1 < /dev/null &
   sleep 2
@@ -164,6 +204,17 @@ kasus_cek() {
     hijau "  halaman / menampilkan tabel"
   else
     merah "  halaman / bukan tabel, app.py mungkin versi lama"
+  fi
+
+  echo "uji MQTT tanpa autentikasi (rentan harus diterima, aman harus ditolak):"
+  if command -v mosquitto_pub >/dev/null 2>&1; then
+    if timeout 3 mosquitto_pub -h 127.0.0.1 -t uji/anonim -m 1 >/dev/null 2>&1; then
+      kuning "  anonim DITERIMA, broker masih terbuka"
+    else
+      hijau "  anonim DITOLAK, broker sudah minta autentikasi"
+    fi
+  else
+    kuning "  mosquitto_pub tidak ada, uji MQTT dilewati"
   fi
 }
 
