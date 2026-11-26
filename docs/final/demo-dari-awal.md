@@ -69,6 +69,16 @@ Cari antarmuka yang punya alamat `192.168.5.200`. Namanya biasanya `eth2`. Pakai
 
 Biarkan terminalnya terbuka. Jangan ditutup sampai serangan selesai.
 
+**Layarnya akan tetap kosong. Itu normal.** Opsi `-w` menulis paket ke berkas, bukan menampilkan ke layar. Jangan panik dan jangan `Ctrl+C`. Kalau mau memastikan rekamannya jalan tanpa menghentikannya, buka tab baru di Onion dengan `Ctrl+Shift+T`, lalu:
+
+`ls -l /tmp/pbl5-demo.pcap`
+
+Ukurannya harus bertambah. Atau periksa isinya:
+
+`sudo tcpdump -r /tmp/pbl5-demo.pcap -c 5`
+
+Kalau keluar lima baris paket, rekamannya jalan.
+
 **Tes rekamannya jalan.** Dari VM Attacker:
 
 `curl -s -m 5 "http://192.168.5.5:3000/sensor?device=sensor-01"`
