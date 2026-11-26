@@ -254,7 +254,6 @@ Aplikasi menyambung masukan pengguna ke teks query memakai `%`, sehingga batas a
 | header tabel `/` | ditulis manual | dari `cur.description` | ketahanan |
 | mode debug | default | `debug=False` eksplisit | penegasan |
 | petunjuk di `/` | ada | dihapus | kebersihan |
-
 # BAGIAN 2 - NASKAH NARASI VIDEO
 
 ---
@@ -265,17 +264,17 @@ Aplikasi menyambung masukan pengguna ke teks query memakai `%`, sehingga batas a
 
 **Narasi:**
 
-Selamat malam. Saya Fattih, dari Kelompok 5, skenario 05, Internal Database Fortress.
+Selamat malam. Saya Fattih, mewakili Kelompok 5, pada skenario 05, Internal Database Fortress.
 
-Sistem yang kami bangun adalah sprinkler otomatis untuk kandang sapi perah. Sensor membaca suhu dan kelembapan, data dikirim ke basis data, lalu ditampilkan pada dashboard. Keputusan penyiraman diambil dari data tersebut.
+Sistem yang dikembangkan pada proyek ini adalah sprinkler otomatis untuk kandang sapi perah. Sensor melakukan pembacaan suhu dan kelembapan, data dikirimkan ke basis data, kemudian disajikan pada dashboard. Keputusan penyiraman diturunkan dari data tersebut.
 
-Konsekuensinya, apabila data yang masuk tidak benar, tindakan yang diambil juga tidak benar. Penyiram dapat menyala pada saat kandang sebenarnya tidak panas, atau diam pada saat suhu benar-benar meningkat.
+Dengan demikian, apabila data yang diterima tidak akurat, keputusan yang dihasilkan juga tidak akurat. Penyiram berpotensi aktif pada kondisi yang tidak memerlukan, atau tidak aktif pada kondisi yang justru memerlukan tindakan.
 
-Karena itu, yang kami uji bukan sensornya, melainkan jalur datanya, mulai dari sensor sampai dashboard.
+Oleh karena itu, objek evaluasi pada pengujian ini bukan perangkat sensornya, melainkan jalur data, mulai dari sensor hingga dashboard.
 
-Pengujian berlangsung pada tiga mesin dalam satu segmen tertutup. Target berada pada 192.168.5.5, penyerang pada 192.168.5.100, dan pemantau pada 192.168.5.200.
+Pengujian dilaksanakan pada tiga mesin dalam satu segmen jaringan tertutup. Target berada pada 192.168.5.5, penyerang pada 192.168.5.100, dan pemantau pada 192.168.5.200.
 
-Metodenya purple team. Kami melakukan serangan, menyiapkan mitigasi, kemudian mengulang serangan yang sama untuk membuktikan bahwa mitigasi tersebut berfungsi.
+Metode yang digunakan adalah purple team. Rangkaian serangan dilaksanakan, mitigasi disiapkan, kemudian serangan yang sama diulang untuk memverifikasi efektivitas mitigasi tersebut.
 
 ---
 
@@ -294,11 +293,11 @@ Metodenya purple team. Kami melakukan serangan, menyiapkan mitigasi, kemudian me
 
 **Narasi:**
 
-Tahap pertama adalah menyalakan ketiga mesin. Perintah `startvm` digunakan untuk menjalankan mesin virtual dalam mode headless, yaitu tanpa jendela grafis, sehingga sumber daya host tidak terpakai untuk tampilan.
+Tahap pertama adalah penyiapan lingkungan pengujian. Perintah `startvm` digunakan untuk menjalankan mesin virtual dalam mode headless, sehingga sumber daya host tidak dialokasikan untuk antarmuka grafis.
 
-Urutannya target, penyerang, lalu pemantau. Pemantau dinyalakan terakhir karena memerlukan waktu paling lama untuk mencapai kondisi siap.
+Urutan penyalaan adalah target, penyerang, kemudian pemantau. Pemantau dinyalakan terakhir karena memerlukan waktu inisialisasi paling lama.
 
-Perintah `list runningvms` digunakan untuk memastikan ketiga mesin benar-benar berjalan sebelum pengujian dimulai.
+Perintah `list runningvms` digunakan untuk memverifikasi bahwa ketiga mesin telah beroperasi sebelum pengujian dimulai.
 
 ---
 
@@ -314,13 +313,13 @@ sudo bash /tmp/purple.sh reset
 
 **Narasi:**
 
-Sebelum pengujian, mesin target dikembalikan ke kondisi sebelum mitigasi. Langkah ini wajib. Apabila target sudah berada dalam kondisi aman, serangan tidak akan berhasil, dan tidak ada yang dapat dibuktikan.
+Sebelum pengujian dilaksanakan, mesin target dikembalikan pada kondisi sebelum mitigasi. Tahap ini bersifat prasyarat. Apabila target berada pada kondisi yang telah dimitigasi, serangan tidak akan berhasil, sehingga tidak ada fenomena yang dapat diobservasi.
 
-Perintah ini menjalankan skrip pengembalian kondisi. Skrip tersebut menghentikan proses yang sedang berjalan, memasang aplikasi versi rentan, membuka layanan pesan, membersihkan data uji dari sesi sebelumnya, dan melepas blokir yang tertinggal.
+Perintah tersebut menjalankan skrip pengembalian kondisi, yang mencakup penghentian proses yang sedang beroperasi, pemasangan aplikasi versi rentan, aktivasi layanan pesan, pembersihan data uji dari sesi sebelumnya, serta pelepasan blokir yang tersisa.
 
-Terdapat satu hal yang sering terlewat pada tahap ini. Proses lama harus dihentikan lebih dahulu. Apabila berkas aplikasi diganti sementara aplikasinya masih berjalan, aplikasi tetap memakai kode yang sudah dimuat ke memori. Berkasnya sudah benar, tetapi perilakunya tidak berubah.
+Terdapat satu aspek teknis yang perlu ditekankan. Proses lama harus dihentikan terlebih dahulu. Apabila berkas aplikasi diganti sementara prosesnya masih beroperasi, aplikasi tetap menggunakan kode yang telah dimuat ke memori. Berkas pada disk telah diperbarui, namun perilaku sistem tidak berubah.
 
-Di akhir, skrip memeriksa hasilnya sendiri. Apabila statusnya masih terbaca aman, pengujian tidak dilanjutkan.
+Pada akhirnya, skrip melakukan verifikasi mandiri. Apabila status yang terbaca masih menunjukkan kondisi aman, pengujian tidak dilanjutkan.
 
 ---
 
@@ -337,13 +336,13 @@ sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap -U
 
 **Narasi:**
 
-Pengujian dimulai dari titik pemantauan, karena seluruh rangkaian serangan harus terekam.
+Pengujian dimulai dari titik pemantauan, karena seluruh rangkaian serangan harus terdokumentasi.
 
-Perintah `ip -br a` digunakan untuk menampilkan daftar antarmuka jaringan beserta alamatnya dalam format ringkas, satu baris per antarmuka. Dari hasilnya terlihat bahwa alamat pemantau adalah 192.168.5.200 pada antarmuka eth2. Seluruh lalu lintas antara penyerang dan target melewati antarmuka tersebut, sehingga kami tidak perlu memasang alat apa pun di mesin penyerang.
+Perintah `ip -br a` digunakan untuk menampilkan daftar antarmuka jaringan beserta alamatnya dalam format ringkas. Berdasarkan hasilnya, alamat pemantau adalah 192.168.5.200 pada antarmuka eth2. Seluruh lalu lintas antara penyerang dan target melewati antarmuka tersebut, sehingga tidak diperlukan pemasangan instrumen tambahan pada mesin penyerang.
 
-Perintah `tcpdump` digunakan untuk merekam lalu lintas pada antarmuka tersebut dan menyimpannya ke dalam berkas. Perekaman dimulai sebelum serangan pertama, bukan sesudahnya. Sensor di lab ini bekerja dengan menganalisis berkas tangkapan, bukan memantau kabel secara langsung. Apabila rekaman baru dimulai setelah serangan, tidak ada data yang dapat dianalisis, dan tahap deteksi akan kosong.
+Perintah `tcpdump` digunakan untuk merekam lalu lintas pada antarmuka tersebut dan menyimpannya dalam berkas. Perekaman dimulai sebelum serangan pertama dilaksanakan. Sensor pada lingkungan ini bekerja dengan menganalisis berkas tangkapan, bukan dengan pemantauan langsung pada media transmisi. Apabila perekaman dimulai setelah serangan, tidak terdapat data yang dapat dianalisis, dan tahap deteksi tidak akan menghasilkan temuan.
 
-Selama proses berjalan, layar tidak menampilkan apa pun. Rekaman tetap berjalan, hanya saja hasilnya ditulis ke berkas. Layar yang kosong bukan berarti proses gagal.
+Selama proses berlangsung, terminal tidak menampilkan keluaran. Perekaman tetap berjalan, dengan hasil dituliskan ke berkas. Tidak adanya tampilan bukan merupakan indikasi kegagalan.
 
 ---
 
@@ -359,17 +358,17 @@ nmap -sS -sV -p- 192.168.5.5
 
 **Narasi:**
 
-Tahap pertama dari pengujian adalah pemetaan layanan. Tujuannya mengetahui permukaan serangan yang tersisa setelah hardening.
+Tahap pertama pengujian adalah pemetaan layanan. Tujuan tahap ini adalah mengidentifikasi permukaan serangan yang tersisa setelah penerapan hardening.
 
-Perintah `nmap` digunakan untuk memindai port pada mesin target, memeriksa seluruh rentang port, sekaligus membaca versi layanan yang menjawab. Hasilnya tiga port. 22 untuk SSH, 1883 untuk layanan pesan, dan 3000 untuk dashboard. Port 3306, yaitu basis data, tidak muncul sama sekali.
+Perintah `nmap` digunakan untuk memindai port pada mesin target, mencakup seluruh rentang port, sekaligus mengidentifikasi versi layanan yang memberikan respons. Hasil pemindaian menunjukkan tiga port terbuka: 22 untuk SSH, 1883 untuk layanan pesan, dan 3000 untuk dashboard. Port 3306, yaitu layanan basis data, tidak terdeteksi.
 
-Yang perlu ditegaskan, basis datanya tetap berjalan dan tetap menyimpan seluruh data. Yang berubah hanya keterlihatannya dari jaringan. Dari sisi penyerang, port tersebut tidak ada. Dari sisi aplikasi, sambungan tetap berjalan normal.
+Perlu ditegaskan bahwa layanan basis data tetap beroperasi dan tetap menyimpan seluruh data. Yang berubah adalah keterlihatannya dari jaringan. Dari perspektif penyerang, port tersebut tidak tersedia. Dari perspektif aplikasi, koneksi berjalan sebagaimana mestinya.
 
-Inilah yang membuat pemetaan menjadi langkah penting. Penyerang tidak dapat menyerang sesuatu yang tidak dapat dilihatnya.
+Kondisi inilah yang menjadikan pemetaan sebagai tahap yang penting. Objek yang tidak dapat diidentifikasi tidak dapat dijadikan sasaran serangan.
 
 ---
 
-## SCENE 6 - Jalur autentikasi
+## SCENE 6 - Mekanisme autentikasi
 
 **Layar:** jendela penyerang, lalu AYAM.
 
@@ -383,13 +382,13 @@ sudo fail2ban-client status sshd
 
 **Narasi:**
 
-Tahap kedua menyasar jalur autentikasi, karena pada umumnya di situlah jalan masuk paling murah.
+Tahap kedua diarahkan pada mekanisme autentikasi, karena pada arsitektur yang umum digunakan, mekanisme tersebut menjadi permukaan yang paling sering dieksploitasi.
 
-Perintah `nc` digunakan untuk menguji apakah sebuah port dapat dihubungi, tanpa mengirim data apa pun. Hasilnya berakhir timeout, bukan refused. Perbedaannya penting. Refused berarti ada layanan yang menjawab dan menolak, sedangkan timeout berarti paketnya dibuang tanpa jawaban. Dari sisi penyerang, tidak ada apa pun pada alamat tersebut.
+Perintah `nc` digunakan untuk menguji keterjangkauan sebuah port tanpa mengirimkan data. Hasilnya berupa timeout, bukan refused. Perbedaan tersebut signifikan. Respons refused menunjukkan adanya layanan yang menjawab dan menolak permintaan, sedangkan timeout menunjukkan paket dibuang tanpa respons. Dari perspektif penyerang, tidak terdapat layanan pada alamat tersebut.
 
-Perintah `hydra` digunakan untuk mencoba daftar kata sandi secara berurutan terhadap layanan SSH. Percobaan tersebut berhenti pada tahap negosiasi, karena layanan hanya menerima kunci. Tidak ada satu kata sandi pun yang benar-benar diuji. Karena itu kami tidak menyimpulkan apa pun mengenai kekuatan kata sandi pada mesin ini, dan hal itu memang bukan bagian dari pengujian kami.
+Perintah `hydra` digunakan untuk menguji daftar kata sandi secara berurutan terhadap layanan SSH. Proses tersebut terhenti pada tahap negosiasi, karena layanan hanya menerima autentikasi berbasis kunci. Tidak ada satu pun kata sandi yang benar-benar diuji. Oleh karena itu, pengujian ini tidak menghasilkan kesimpulan mengenai kekuatan kata sandi pada mesin tersebut, dan hal itu memang berada di luar cakupan evaluasi.
 
-Perintah `fail2ban-client` digunakan untuk menampilkan status blokir pada layanan tersebut. Hasilnya menunjukkan bahwa percobaan yang gagal berulang dicatat, kemudian alamatnya diblokir secara otomatis.
+Perintah `fail2ban-client` digunakan untuk menampilkan status pemblokiran pada layanan tersebut. Hasilnya menunjukkan bahwa percobaan yang gagal secara berulang dicatat, kemudian alamat sumbernya diblokir secara otomatis.
 
 ---
 
@@ -407,21 +406,21 @@ curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"
 
 **Narasi:**
 
-Tahap ketiga menyasar lapisan aplikasi, dan ini merupakan temuan utama kami.
+Tahap ketiga diarahkan pada lapisan aplikasi, dan pada tahap inilah temuan utama diperoleh.
 
-Perintah `curl` digunakan untuk mengirim permintaan HTTP langsung dari terminal dan menampilkan respons yang diterima, sehingga isi respons dapat dibaca tanpa perantara peramban.
+Perintah `curl` digunakan untuk mengirimkan permintaan HTTP langsung dari terminal dan menampilkan respons yang diterima, sehingga isi respons dapat dianalisis tanpa perantara peramban.
 
-Tiga permintaan berikut menunjukkan satu hal: masukan dari URL dapat mengubah perintah yang dikirim ke basis data.
+Tiga permintaan berikut menunjukkan satu kesimpulan: masukan melalui URL dapat mengubah perintah yang dikirimkan ke basis data.
 
-Permintaan normal mengembalikan dua baris, sesuai perangkat yang diminta. Ketika parameternya diubah menjadi kondisi yang selalu benar, seluruh isi tabel terbuka. Ketika diubah menjadi kondisi yang selalu salah, hasilnya kosong.
+Permintaan normal mengembalikan dua baris, sesuai perangkat yang diminta. Ketika parameter diubah menjadi kondisi yang selalu bernilai benar, seluruh isi tabel terbuka. Ketika parameter diubah menjadi kondisi yang selalu bernilai salah, hasil yang dikembalikan kosong.
 
-Hasil kosong itulah yang menutup perdebatan. Apabila hanya kasus pertama yang ditampilkan, masih terdapat ruang untuk berargumen bahwa hal tersebut merupakan kesalahan tampilan. Dengan hasil nol pada kasus ketiga, menjadi jelas bahwa yang berubah adalah logika query, bukan halaman.
+Hasil kosong pada kasus ketiga merupakan bukti yang menentukan. Apabila hanya kasus pertama yang disajikan, masih terbuka kemungkinan bahwa yang terjadi adalah kesalahan penyajian. Dengan hasil kosong pada kasus ketiga, dapat disimpulkan bahwa yang berubah adalah logika query, bukan tampilan.
 
-Terdapat kebocoran tambahan. Bentuk keluarannya masih berupa format mentah bahasa pemrograman, sehingga struktur dan tipe kolom ikut terbaca dari luar. Penyerang tidak hanya memperoleh isi data, tetapi juga peta tabelnya.
+Terdapat kebocoran tambahan. Format keluaran masih berupa representasi mentah bahasa pemrograman, sehingga struktur dan tipe kolom ikut terbaca. Penyerang tidak hanya memperoleh isi data, tetapi juga skema tabel.
 
 ---
 
-## SCENE 8 - Data palsu melalui MQTT
+## SCENE 8 - Data palsu melalui layanan pesan
 
 **Layar:** dua terminal penyerang, lalu AYAM, lalu browser.
 
@@ -435,21 +434,21 @@ tail -3 /var/log/iot/subscriber.log
 
 **Narasi:**
 
-Sekarang masuk ke bagian kedua, yaitu injeksi data palsu melalui layanan pesan.
+Bagian kedua diarahkan pada injeksi data melalui layanan pesan.
 
-Perintah `mosquitto_sub` digunakan untuk berlangganan seluruh topik sensor dan menampilkan setiap pesan yang masuk. Perintah `mosquitto_pub` digunakan untuk mengirim satu pesan ke topik tertentu, seolah-olah pesan tersebut berasal dari perangkat sensor.
+Perintah `mosquitto_sub` digunakan untuk berlangganan seluruh topik sensor dan menampilkan setiap pesan yang diterima. Perintah `mosquitto_pub` digunakan untuk mengirimkan satu pesan ke topik tertentu, sehingga pesan tersebut tampak berasal dari perangkat sensor yang sah.
 
-Pesan langsung diterima tanpa autentikasi dan tanpa penolakan.
+Pesan diterima tanpa proses autentikasi dan tanpa penolakan.
 
-Pada mesin target, data tersimpan: sensor-99 dengan suhu 99,9. Sensor ini sebenarnya tidak ada, kami yang membuatnya. Namun subscriber menerimanya begitu saja sebagai data valid.
+Pada mesin target, data tersimpan dengan identitas sensor-99 dan nilai suhu 99,9. Perangkat dengan identitas tersebut tidak pernah ada, melainkan diciptakan pada pengujian ini. Namun layanan penerima memperlakukannya sebagai data yang valid.
 
-Pada dashboard, baris tersebut muncul di posisi teratas dengan suhu 99,9. Untuk sapi, suhu normal berada sekitar 38 derajat, sehingga sistem penyiram akan terus menyala. Dashboard juga tidak memberi tanda bahwa data ini palsu, tampilannya identik dengan data asli.
+Pada dashboard, data tersebut tampil pada posisi teratas dengan nilai suhu 99,9. Suhu normal sapi perah berada pada kisaran 38 derajat, sehingga sistem akan mengaktifkan penyiram secara terus-menerus. Dashboard juga tidak memberikan penanda bahwa data tersebut tidak sah, sehingga tampilannya identik dengan data asli.
 
-Perintah `tail` digunakan untuk menampilkan beberapa baris terakhir pada berkas log, guna memastikan bahwa pesan tersebut benar-benar tercatat oleh layanan penerima.
+Perintah `tail` digunakan untuk menampilkan sejumlah baris terakhir pada berkas log, guna memastikan bahwa pesan tersebut tercatat oleh layanan penerima.
 
-Dampaknya bukan pencurian data, melainkan hilangnya integritas data. Keputusan yang diambil dari data yang salah akan menghasilkan tindakan yang salah.
+Dampak yang timbul bukan pencurian data, melainkan hilangnya integritas data. Keputusan yang diturunkan dari data yang tidak akurat akan menghasilkan tindakan yang tidak akurat.
 
-Selanjutnya, kita analisis di Security Onion.
+Selanjutnya, analisis dilakukan pada Security Onion.
 
 ---
 
@@ -466,13 +465,13 @@ sudo so-import-pcap /tmp/pbl5-demo.pcap
 
 **Narasi:**
 
-Setelah rangkaian serangan selesai, perekaman dihentikan. Perintah `tcpdump` dengan opsi baca digunakan untuk membaca kembali berkas tangkapan, sedangkan `wc -l` digunakan untuk menghitung jumlah barisnya. Apabila hasilnya nol, rekaman dianggap gagal dan tidak ada yang dapat dianalisis.
+Setelah rangkaian serangan selesai, perekaman dihentikan. Perintah `tcpdump` dengan mode baca digunakan untuk membaca kembali berkas tangkapan, sedangkan `wc -l` digunakan untuk menghitung jumlah baris di dalamnya. Apabila hasilnya nol, perekaman dinyatakan gagal dan tidak terdapat data yang dapat dianalisis.
 
-Perintah `so-import-pcap` digunakan untuk memasukkan berkas tangkapan tersebut ke dalam sensor, agar diproses oleh mesin analisis yang tersedia.
+Perintah `so-import-pcap` digunakan untuk memasukkan berkas tangkapan ke dalam sensor, agar diproses oleh mesin analisis yang tersedia.
 
-Proses ini memerlukan waktu, karena berkas dibaca ulang oleh dua mesin analisis, yaitu Suricata dan Zeek, kemudian hasilnya dimasukkan ke basis data pencarian.
+Proses tersebut memerlukan waktu, karena berkas dibaca ulang oleh dua mesin analisis, yaitu Suricata dan Zeek, kemudian hasilnya dimasukkan ke basis data pencarian.
 
-Konsekuensinya, analisis dalam metode kami berjalan setelah serangan, bukan pada saat serangan berlangsung. Hal tersebut merupakan keterbatasan yang kami catat, bukan yang kami sembunyikan.
+Konsekuensinya, analisis pada metode ini berlangsung setelah serangan, bukan pada saat serangan berlangsung. Hal tersebut merupakan keterbatasan yang dicatat, bukan yang disembunyikan.
 
 ---
 
@@ -488,15 +487,15 @@ Konsekuensinya, analisis dalam metode kami berjalan setelah serangan, bukan pada
 
 **Narasi:**
 
-Hasil analisis ditampilkan melalui antarmuka pencarian pada mesin pemantau. Yang tercatat adalah bentuk koneksi, yaitu port tujuan, jumlah data, dan status penyelesaian. Status yang terbaca menunjukkan koneksi selesai secara normal, yang berarti server memang membalas permintaan tersebut.
+Hasil analisis disajikan melalui antarmuka pencarian pada mesin pemantau. Data yang tercatat mencakup bentuk koneksi, yaitu port tujuan, jumlah byte, dan status penyelesaian. Status yang terbaca menunjukkan koneksi selesai secara normal, yang berarti server memberikan respons.
 
-Terdapat dua batas yang perlu kami sampaikan.
+Terdapat dua batas yang perlu disampaikan.
 
-Pertama, karena sensor bekerja dari berkas tangkapan, selalu terdapat jeda antara serangan dan hasil analisis. Deteksi dengan cara ini tidak dapat dipakai untuk menghentikan serangan yang sedang berlangsung.
+Pertama, karena sensor bekerja dari berkas tangkapan, selalu terdapat jeda antara pelaksanaan serangan dan ketersediaan hasil analisis. Deteksi dengan pendekatan ini tidak dapat digunakan untuk menghentikan serangan yang sedang berlangsung.
 
-Kedua, yang terekam adalah bentuk lalu lintas, bukan isi serangan. Tidak ada aturan yang mengenali injeksi pada parameter URL, dan tidak ada yang mengenali penyisipan pesan. Kedua serangan tersebut tidak muncul sebagai peringatan, melainkan hanya sebagai koneksi yang selesai normal.
+Kedua, yang terekam adalah bentuk lalu lintas, bukan isi serangan. Tidak terdapat aturan yang mengenali injeksi pada parameter URL, dan tidak terdapat aturan yang mengenali penyisipan pesan. Kedua serangan tersebut tidak muncul sebagai peringatan, melainkan hanya sebagai koneksi yang selesai normal.
 
-Deteksi kami kuat pada lapisan jaringan, dan lemah tepat pada lapisan yang paling kami sorot. Hal itu kami catat sebagai kekurangan.
+Dengan demikian, deteksi yang tersedia kuat pada lapisan jaringan dan lemah pada lapisan aplikasi. Kondisi tersebut dicatat sebagai kekurangan.
 
 ---
 
@@ -512,11 +511,11 @@ sudo bash /tmp/purple.sh mitigasi
 
 **Narasi:**
 
-Mitigasi dilakukan pada lapisan aplikasi. Perintah ini menjalankan skrip mitigasi, yang bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya, kemudian menjalankannya kembali.
+Mitigasi dilakukan pada lapisan aplikasi. Perintah tersebut menjalankan skrip mitigasi dengan tiga urutan kerja: menghentikan aplikasi, mengganti berkas, kemudian menjalankannya kembali.
 
-Urutan tersebut bukan formalitas. Proses yang berjalan menyimpan kode di memori, sehingga mengganti berkas pada saat aplikasi masih hidup tidak mengubah perilakunya. Kami sempat mengalami hal itu pada saat latihan: berkasnya sudah benar, tetapi hasil pengujian tetap gagal, karena yang berjalan masih kode lama.
+Urutan tersebut bukan formalitas. Proses yang beroperasi menyimpan kode di memori, sehingga penggantian berkas pada saat aplikasi masih berjalan tidak mengubah perilakunya. Kondisi tersebut pernah teramati pada tahap latihan: berkas telah diperbarui, namun hasil pengujian tetap gagal karena proses yang beroperasi masih menggunakan kode lama.
 
-Setelah penggantian, terdapat tiga perubahan. Masukan tidak lagi disambung ke dalam query, melainkan dikirim sebagai nilai terpisah, sehingga basis data membacanya sebagai data dan tidak pernah sebagai perintah. Keluarannya diubah menjadi format terstruktur, sehingga struktur tabel tidak lagi terbaca. Dan mode pengembangan dimatikan, agar pesan kesalahan tidak menampilkan isi internal aplikasi.
+Setelah penggantian, terdapat tiga perubahan. Masukan tidak lagi disambungkan ke dalam query, melainkan dikirimkan sebagai nilai terpisah, sehingga basis data membacanya sebagai data dan tidak sebagai perintah. Keluaran diubah menjadi format terstruktur, sehingga struktur tabel tidak lagi terbaca. Mode pengembangan dinonaktifkan, agar pesan kesalahan tidak menampilkan informasi internal aplikasi.
 
 ---
 
@@ -533,13 +532,13 @@ curl "http://192.168.5.5:3000/sensor?device=sensor-01"
 
 **Narasi:**
 
-Untuk membuktikan mitigasi, serangan yang sama diulang tanpa perubahan apa pun, menggunakan perintah dan payload yang identik dengan tahap sebelumnya.
+Untuk memverifikasi mitigasi, serangan yang sama diulang tanpa perubahan, menggunakan perintah dan payload yang identik dengan tahap sebelumnya.
 
 Hasilnya kosong.
 
-Karena serangannya identik, perubahan hasil hanya dapat disebabkan oleh perubahan pada aplikasi. Apabila kami hanya menyatakan bahwa sistem sudah dimitigasi, hal itu masih berupa klaim. Dengan mengulang serangan yang sama, hasilnya menjadi bukti.
+Karena serangan yang diberikan identik, perubahan hasil hanya dapat disebabkan oleh perubahan pada aplikasi. Pernyataan bahwa sistem telah dimitigasi, tanpa pengujian ulang, masih merupakan klaim. Dengan pengulangan serangan yang sama, hasil tersebut menjadi bukti.
 
-Kami juga menguji permintaan normal, untuk memastikan aplikasi tetap berfungsi dan mitigasi tidak merusak layanan.
+Pengujian juga dilakukan pada permintaan normal, untuk memastikan aplikasi tetap berfungsi dan mitigasi tidak mengganggu layanan.
 
 ---
 
@@ -551,17 +550,17 @@ Kami juga menguji permintaan normal, untuk memastikan aplikasi tetap berfungsi d
 
 Kesimpulannya.
 
-Pemetaan layanan tertutup. Tersisa tiga port, dan basis data tidak terlihat dari jaringan meskipun layanannya tetap berjalan.
+Pemetaan layanan telah tertutup. Tersisa tiga port, dan layanan basis data tidak terlihat dari jaringan meskipun tetap beroperasi.
 
-Jalur autentikasi tertutup. Basis data hanya menerima sambungan dari dalam mesin, SSH hanya menerima kunci, dan percobaan berulang diblokir secara otomatis.
+Mekanisme autentikasi telah diperkuat. Basis data hanya menerima koneksi dari dalam mesin, SSH hanya menerima autentikasi berbasis kunci, dan percobaan berulang diblokir secara otomatis.
 
-Injeksi pada lapisan aplikasi tertutup, dan telah terbukti melalui pengulangan serangan yang sama.
+Injeksi pada lapisan aplikasi telah tertutup, dan hal tersebut terbukti melalui pengulangan serangan yang identik.
 
-Penyisipan data melalui layanan pesan belum tuntas. Konfigurasinya sudah disiapkan, tetapi belum terbukti berlaku penuh, sehingga kami catat sebagai temuan terbuka.
+Penyisipan data melalui layanan pesan belum sepenuhnya tertangani. Konfigurasi telah disiapkan, tetapi belum terbukti berlaku secara penuh, sehingga dicatat sebagai temuan terbuka.
 
-Kami memilih mencatatnya apa adanya. Konfigurasi yang belum terbukti bukan mitigasi, dan menyebutnya selesai hanya akan menutupi masalah yang masih ada.
+Temuan tersebut dicatat apa adanya. Konfigurasi yang belum terbukti bukan merupakan mitigasi, dan pernyataan bahwa persoalan telah selesai hanya akan menutupi masalah yang masih ada.
 
-Sekian, terima kasih.
+Demikian yang dapat kami sampaikan. Terima kasih.
 
 ---
 
