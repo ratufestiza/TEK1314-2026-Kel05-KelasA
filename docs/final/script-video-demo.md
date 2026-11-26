@@ -261,11 +261,19 @@ Mitigasi dilakukan pada lapisan aplikasi, memakai skrip yang sama dengan tahap p
 
 Mode ini hanya menyentuh aplikasi. Konfigurasi layanan pesan, basis data, dan mekanisme pemblokiran tidak diubah, agar perubahan yang diuji terbatas pada satu variabel dan perbedaan hasil dapat diatribusikan dengan jelas.
 
-Skrip bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya dengan versi yang diperbaiki, lalu menjalankannya kembali.
+Skrip bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya dengan versi yang diperbaiki, lalu menjalankannya kembali. Urutan ini bukan formalitas. Proses yang beroperasi menyimpan kode di memori, sehingga penggantian berkas saat aplikasi masih berjalan tidak mengubah perilakunya. Kondisi itu pernah teramati saat latihan: berkas sudah diperbarui, tetapi pengujian tetap gagal karena yang berjalan masih kode lama.
 
-Urutan ini bukan formalitas. Proses yang beroperasi menyimpan kode di memori, sehingga penggantian berkas saat aplikasi masih berjalan tidak mengubah perilakunya. Kondisi itu pernah teramati saat latihan: berkas sudah diperbarui, tetapi pengujian tetap gagal karena yang berjalan masih kode lama.
+Perubahan yang dilakukan terbatas pada satu berkas, yaitu berkas aplikasi. Terdapat empat perubahan di dalamnya.
 
-Setelah penggantian, ada tiga perubahan. Masukan tidak lagi disambungkan ke dalam query, melainkan dikirim sebagai nilai terpisah, sehingga basis data membacanya sebagai data dan tidak sebagai perintah. Keluaran diubah menjadi format terstruktur, sehingga struktur tabel tidak terbaca. Mode pengembangan dinonaktifkan, agar pesan kesalahan tidak menampilkan informasi internal.
+Perubahan pertama menyangkut cara aplikasi menyusun query. Pada versi lama, nilai yang dikirim pengguna disambungkan langsung ke dalam teks query memakai pemformatan string. Pada versi baru, teks query dan nilai dikirim secara terpisah sebagai dua argumen. Basis data menerima nilai itu sebagai data, sehingga tanda kutip yang dikirim pengguna tidak lagi dapat memutus batas antara perintah dan data.
+
+Perubahan kedua menyangkut bentuk keluaran. Pada versi lama, hasil query dikembalikan apa adanya sebagai representasi objek bahasa pemrograman, sehingga nama kolom, urutan kolom, dan tipe datanya ikut terbaca. Pada versi baru, hasilnya disusun menjadi struktur data berlabel yang bentuknya tetap, sehingga informasi skema tidak lagi terbuka.
+
+Perubahan ketiga menyangkut penyajian data pada halaman dashboard. Pada versi lama, nilai dari basis data disisipkan langsung ke dalam HTML. Pada versi baru, setiap nilai dilewatkan melalui fungsi penyandian terlebih dahulu, sehingga karakter yang berpotensi dibaca sebagai penanda HTML ditampilkan sebagai teks biasa.
+
+Perubahan keempat menghapus satu baris pada halaman dashboard yang menampilkan contoh alamat pemanggilan endpoint sensor, karena baris tersebut memberi petunjuk langsung mengenai parameter yang dapat diuji.
+
+Perlu ditegaskan bahwa hanya perubahan pertama yang menutup injeksi SQL. Tiga perubahan lainnya bersifat pengerasan tambahan: menutup kebocoran skema, mencegah penyisipan penanda HTML, dan menghapus petunjuk yang tidak diperlukan. Perubahan pada mode pengembangan tidak memengaruhi hasil pengujian, karena mode tersebut sejak awal tidak aktif.
 
 ---
 
