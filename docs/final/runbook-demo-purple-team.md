@@ -180,7 +180,7 @@ Kalau pesan masuk tanpa kata sandi, jalur ini siap didemokan.
 
 ## Langkah 8 - Uji tiga skenario dari Attacker
 
-**Semua di sini dijalankan di VM Cybersecurity LabVM, bukan di AYAM.** Alamat target harus `192.168.5.5`, jangan `127.0.0.1`.
+**Semua di sini dijalankan di VM Cybersecurity LabVM, bukan di AYAM.** Alamat target harus `192.168.5.5`.
 
 1. Skenario 1, pengintaian:
 
@@ -214,7 +214,7 @@ Biarkan terminal itu terbuka, lalu di terminal kedua:
 
 Yang diharapkan: pesan muncul di terminal subscriber, dan baris `sensor-99` masuk ke tabel lalu tampil di dashboard.
 
-**Kalau `192.168.5.5` tidak menjawab sama sekali padahal Flask hidup, cek dulu di AYAM.** Saat Flask menyala, outputnya harus menyebut `Running on http://192.168.5.5:3000`. Kalau yang muncul hanya `127.0.0.1` dan `10.0.3.15`, berarti alamat segmen lab belum terpasang. Perbaikannya di AYAM: `sudo netplan apply`, lalu cek `ip a | grep 192.168.5`.
+**Kalau `192.168.5.5` tidak menjawab sama sekali padahal Flask hidup, cek dulu di AYAM.** Saat Flask menyala, outputnya harus menyebut `Running on http://192.168.5.5:3000`. Kalau alamat itu tidak ada di daftar, berarti alamat segmen lab belum terpasang. Perbaikannya di AYAM: `sudo netplan apply`, lalu cek `ip a | grep 192.168.5`.
 
 ---
 
