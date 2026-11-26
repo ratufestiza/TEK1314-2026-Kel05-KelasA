@@ -249,51 +249,93 @@ Ada dua batas. Pertama, karena sensor bekerja dari berkas tangkapan, selalu ada 
 
 **Layar:** jendela AYAM.
 
+**Narasi pembuka:**
+
+Mitigasi mencakup dua bagian yang berbeda: injeksi pada lapisan aplikasi, dan penyisipan data melalui layanan pesan. Keduanya ditangani pada tahap ini, dengan perintah yang dijalankan langsung di mesin target.
+
+### Bagian pertama, SQL Injection
+
 **Aksi:**
 
 ```
-sudo bash /tmp/purple.sh mitigasi
+ps -eo pid,args | grep "python3 app.py"
+sudo kill 4536
+sudo cp /opt/iot-dashboard/app.py.aman /opt/iot-dashboard/app.py
+ls -l /opt/iot-dashboard/app.py
+sudo -b nohup python3 app.py > /var/log/iot/dashboard.log 2>&1 &
 ```
 
 **Narasi:**
 
-Mitigasi mencakup dua bagian yang berbeda: injeksi pada lapisan aplikasi, dan penyisipan data melalui layanan pesan. Keduanya ditangani pada satu tahap ini.
+Perintah pertama menampilkan daftar proses yang sedang berjalan dan menyaring yang relevan, untuk memperoleh nomor proses aplikasi. Nomor itu diperlukan karena penghentian harus ditujukan kepada proses tertentu, bukan kepada seluruh proses Python pada mesin.
 
-## Mitigasi SQL Injection
+Perintah kedua menghentikan proses tersebut. Urutannya penting: aplikasi harus berhenti sebelum berkasnya diganti, karena proses yang sedang berjalan menyimpan kode di memori. Apabila berkas ditimpa sementara aplikasi masih hidup, berkas pada disk sudah benar, tetapi perilakunya tetap perilaku kode lama. Kondisi itu pernah terjadi pada latihan sebelumnya dan membuat pengujian gagal meskipun penggantian berkas berhasil.
 
-Mitigasi pada lapisan aplikasi memakai skrip yang sama dengan tahap pengembalian kondisi, tetapi dengan mode yang berbeda.
+Perintah ketiga menyalin berkas versi aman menimpa berkas versi rentan. Hanya satu berkas yang ditimpa. Konfigurasi basis data, layanan pesan, dan mekanisme pemblokiran tidak disentuh, agar perubahan yang diuji terbatas pada satu variabel.
 
-Skrip bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya dengan versi yang diperbaiki, lalu menjalankannya kembali. Urutan ini bukan formalitas. Proses yang beroperasi menyimpan kode di memori, sehingga penggantian berkas saat aplikasi masih berjalan tidak mengubah perilakunya. Kondisi itu pernah teramati saat latihan: berkas sudah diperbarui, tetapi pengujian tetap gagal karena yang berjalan masih kode lama.
+Perintah keempat memeriksa ukuran berkas hasil penyalinan. Ukuran versi rentan 1483 byte, sedangkan versi aman 1791 byte. Pemeriksaan ini bukan formalitas: tanpa angka pembanding, kegagalan penyalinan tidak akan terlihat, dan pengujian berikutnya akan dinilai salah.
 
-Perubahan yang dilakukan terbatas pada satu berkas, yaitu berkas aplikasi. Terdapat empat perubahan di dalamnya.
+Perintah kelima menjalankan aplikasi kembali di latar belakang, dengan keluarannya diarahkan ke berkas log. Aplikasi dijalankan terpisah dari terminal agar tetap hidup setelah sesi ditutup, dan agar terminal tetap dapat dipakai untuk perintah berikutnya.
 
-Perubahan pertama menyangkut cara aplikasi menyusun query. Pada versi lama, nilai yang dikirim pengguna disambungkan langsung ke dalam teks query memakai pemformatan string. Pada versi baru, teks query dan nilai dikirim secara terpisah sebagai dua argumen. Basis data menerima nilai itu sebagai data, sehingga tanda kutip yang dikirim pengguna tidak lagi dapat memutus batas antara perintah dan data.
+### Bagian kedua, MQTT Injection
 
-Perubahan kedua menyangkut bentuk keluaran. Pada versi lama, hasil query dikembalikan apa adanya sebagai representasi objek bahasa pemrograman, sehingga nama kolom, urutan kolom, dan tipe datanya ikut terbaca. Pada versi baru, hasilnya disusun menjadi struktur data berlabel yang bentuknya tetap, sehingga informasi skema tidak lagi terbuka.
+**Aksi:**
 
-Perubahan ketiga menyangkut penyajian data pada halaman dashboard. Pada versi lama, nilai dari basis data disisipkan langsung ke dalam HTML. Pada versi baru, setiap nilai dilewatkan melalui fungsi penyandian terlebih dahulu, sehingga karakter yang berpotensi dibaca sebagai penanda HTML ditampilkan sebagai teks biasa.
+```
+ls /etc/mosquitto/conf.d
+sudo mv /etc/mosquitto/conf.d/pb15-awal.conf /root/pb15-awal.conf.nonaktif
+sudo mosquitto_passwd -c -b /etc/mosquitto/passwd sensor 'SensorPBL5!2026'
+sudo chown mosquitto:mosquitto /etc/mosquitto/passwd
+sudo chmod 640 /etc/mosquitto/passwd
+ls -l /etc/mosquitto/passwd
+sudo nano /etc/mosquitto/conf.d/default.conf
+sudo systemctl restart mosquitto
+mosquitto_pub -h 127.0.0.1 -t uji/anonim -m 1
+sudo nano /opt/iot-dashboard/subscriber.py
+sudo -b nohup python3 subscriber.py > /var/log/iot/subscriber.log 2>&1 &
+```
 
-Perubahan keempat menghapus satu baris pada halaman dashboard yang menampilkan contoh alamat pemanggilan endpoint sensor, karena baris tersebut memberi petunjuk langsung mengenai parameter yang dapat diuji.
+**Narasi:**
 
-Perlu ditegaskan bahwa hanya perubahan pertama yang menutup injeksi SQL. Tiga perubahan lainnya bersifat pengerasan tambahan. Perubahan pada mode pengembangan tidak memengaruhi hasil pengujian, karena mode tersebut sejak awal tidak aktif.
+Mitigasi pada layanan pesan tidak dapat diselesaikan dengan mengganti berkas aplikasi. Masalahnya berada pada konfigurasi broker.
 
-## Mitigasi MQTT Injection
+Perintah pertama menampilkan isi direktori konfigurasi broker. Ini langkah yang menentukan, karena broker membaca seluruh berkas dalam direktori tersebut secara berurutan menurut abjad, dan nilai yang dibaca terakhir yang berlaku. Apabila terdapat lebih dari satu berkas yang mengatur hal yang sama, berkas dengan nama terakhir yang menang.
 
-Mitigasi pada layanan pesan tidak dapat diselesaikan dengan mengganti berkas aplikasi. Masalahnya berada pada konfigurasi broker, sehingga yang harus diubah adalah konfigurasi tersebut.
+Perintah kedua memindahkan berkas konfigurasi lama keluar dari direktori tersebut. Berkas lama itu masih memuat akses anonim aktif, dan namanya berada setelah berkas konfigurasi baru. Inilah sebab kegagalan mitigasi pada percobaan sebelumnya: konfigurasi baru sudah ditulis, tetapi nilainya kalah oleh berkas lama. Memindahkan berkas itu lebih dahulu membuat konfigurasi baru benar-benar berlaku.
 
-Pada kondisi rentan, broker menerima klien tanpa identitas. Siapa pun yang dapat menjangkau port 1883 dapat membaca seluruh topik sensor, dan dapat mengirim pesan yang mengaku berasal dari perangkat mana pun.
+Perintah ketiga membuat berkas kata sandi dan menambahkan satu akun untuk perangkat sensor. Berkas lama ditimpa, agar tidak ada akun sisa dari percobaan sebelumnya yang masih dapat dipakai.
 
-Langkah pertama adalah memeriksa isi direktori konfigurasi. Terdapat lebih dari satu berkas konfigurasi, dan broker membacanya berurutan menurut abjad. Nilai yang dibaca terakhir yang berlaku.
+Perintah keempat menyerahkan kepemilikan berkas kata sandi kepada akun layanan broker, karena layanan itu yang akan membacanya.
 
-Di sinilah penyebab kegagalan mitigasi sebelumnya ditemukan. Berkas konfigurasi lama masih memuat akses anonim aktif, dan namanya berada setelah berkas konfigurasi baru. Akibatnya konfigurasi baru ditulis, tetapi nilai lama tetap menang. Berkas lama tersebut dipindahkan keluar dari direktori konfigurasi lebih dahulu, sebelum perubahan lain dilakukan.
+Perintah kelima membatasi izin berkas. Hanya pemilik dan grupnya yang dapat membaca. Pengguna lain pada mesin yang sama tidak dapat melihat kata sandi, sehingga akun tersebut tidak dapat dipakai hanya karena seseorang berhasil masuk ke mesin ini.
 
-Langkah kedua adalah membuat akun untuk perangkat sensor. Kata sandi akun tersebut disimpan pada berkas tersendiri, yang kepemilikannya diserahkan kepada layanan broker dan izinnya dibatasi hanya untuk pemilik dan grup. Berkas kata sandi tidak dapat dibaca oleh pengguna lain pada mesin tersebut.
+Perintah keenam memeriksa hasilnya. Izin yang benar terlihat sebagai baca dan tulis untuk pemilik, baca untuk grup, dan tidak ada akses untuk lainnya.
 
-Langkah ketiga adalah menulis ulang konfigurasi broker: akses anonim dimatikan, dan berkas kata sandi ditunjuk sebagai sumber autentikasi. Setelah itu layanan broker dijalankan ulang.
+Perintah ketujuh membuka berkas konfigurasi broker untuk ditulis ulang. Isinya tiga baris: alamat dan port tempat broker mendengarkan, pernyataan bahwa akses anonim tidak diizinkan, dan penunjukan berkas kata sandi sebagai sumber identitas. Ketiga baris itu menggantikan pengaturan lama, sehingga klien tanpa identitas tidak lagi diterima.
 
-Langkah keempat menyangkut pihak yang justru terdampak oleh perubahan ini, yaitu layanan penerima data pada mesin target. Layanan tersebut selama ini terhubung tanpa identitas, sehingga setelah akses anonim ditutup, ia akan ikut ditolak. Karena itu layanan tersebut diberi kredensial yang sama sebelum dijalankan kembali. Ini konsekuensi yang perlu disadari: menutup akses anonim tanpa menyesuaikan klien yang sah akan menghentikan aliran data, bukan mengamankannya.
+Perintah kedelapan memuat ulang layanan broker. Perubahan pada berkas konfigurasi tidak berlaku sampai layanannya dijalankan ulang.
 
-Langkah terakhir adalah verifikasi pada tiga titik. Pengiriman pesan tanpa identitas harus ditolak broker. Permintaan dashboard yang normal harus tetap berjalan. Dan berkas log layanan penerima harus menunjukkan bahwa data masih tercatat, sebagai bukti bahwa penutupan akses tidak memutus aliran data yang sah.
+Perintah kesembilan menguji hasilnya dari dalam mesin, tanpa menyertakan identitas. Apabila broker menolak, konfigurasi telah berlaku. Pengujian dilakukan dari mesin itu sendiri lebih dahulu, supaya tidak ada faktor jaringan yang mengaburkan hasil.
+
+Perintah kesepuluh membuka berkas layanan penerima data. Layanan itu selama ini terhubung tanpa identitas, sehingga setelah akses anonim ditutup ia akan ikut ditolak. Yang ditambahkan hanya satu baris, yaitu penyertaan identitas akun sebelum koneksi dibuka. Tanpa langkah ini, penutupan akses anonim akan menghentikan aliran data yang sah, dan sistem menjadi aman karena tidak lagi berfungsi.
+
+Perintah kesebelas menjalankan kembali layanan penerima dengan kredensial tersebut. Layanan lama harus dimatikan lebih dahulu, karena ia masih memegang koneksi dengan identitas lama.
+
+### Yang berubah
+
+| Objek | Sebelum | Sesudah |
+| --- | --- | --- |
+| Berkas aplikasi | 1483 byte, query disusun dengan pemformatan string | 1791 byte, query dan nilai dikirim terpisah |
+| Keluaran aplikasi | representasi objek, skema terbaca | struktur berlabel, skema tidak terbaca |
+| Halaman dashboard | nilai disisipkan langsung ke HTML | nilai disandikan lebih dahulu |
+| Petunjuk endpoint | tercantum di halaman | dihapus |
+| Akses broker | anonim diterima | anonim ditolak |
+| Berkas konfigurasi lama | aktif di direktori konfigurasi | dipindahkan keluar |
+| Layanan penerima data | terhubung tanpa identitas | terhubung dengan kredensial |
+
+**Narasi penutup bagian:**
+
+Dari tabel ini terlihat bahwa hanya satu perubahan yang menutup injeksi SQL, yaitu perubahan cara query disusun. Tiga perubahan lain pada berkas aplikasi bersifat pengerasan tambahan. Pada sisi layanan pesan, yang menutup penyisipan data adalah penolakan terhadap klien tanpa identitas, sedangkan pemindahan berkas lama adalah syarat agar penolakan itu benar-benar berlaku.
 
 ---
 
