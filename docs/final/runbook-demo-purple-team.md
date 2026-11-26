@@ -531,7 +531,11 @@ Cek jumlah paketnya:
 
 `tcpdump -r /tmp/pbl5-demo.pcap | wc -l`
 
-Lalu impor lewat menu Hunt di Security Onion, atau lewat antarmuka import yang ada di versi yang terpasang.
+Lalu impor ke sensor. Cara utamanya satu perintah:
+
+`sudo so-import-pcap /tmp/pbl5-demo.pcap`
+
+Tunggu lima sampai lima belas menit, layarnya diam lama dan itu normal. Langkah rinci ada di `onion-impor-pcap.md`.
 
 Kalau nama antarmukanya bukan `eth2`, cek dulu:
 

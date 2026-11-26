@@ -201,6 +201,12 @@ Harus ribuan, bukan nol.
 
 Impor lewat antarmuka Security Onion. Di versi yang terpasang, masuk ke menu Hunt lalu pilih opsi impor pcap, arahkan ke `/tmp/pbl5-demo.pcap`.
 
+Langkah impor yang rinci ada di `onion-impor-pcap.md`. Cara utamanya bukan lewat menu, tapi satu perintah:
+
+`sudo so-import-pcap /tmp/pbl5-demo.pcap`
+
+Tunggu lima sampai lima belas menit. Layarnya diam lama, itu normal, jangan dihentikan.
+
 Setelah impor selesai, buka Kibana di browser dalam VM Onion:
 
 `https://localhost`
