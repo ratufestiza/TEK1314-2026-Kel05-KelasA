@@ -1,6 +1,6 @@
 # Script Video Demo Purple Team
 
-Narasi formal ringkas. Tiap perintah dijelaskan lengkap dengan opsinya, tanpa pengulangan. Urutan ikut `demo-dari-awal.md`.
+Narasi formal. Tiap perintah dijelaskan fungsinya secara utuh sebagai satu perintah, tanpa merinci opsi. Urutan ikut `demo-dari-awal.md`.
 
 ---
 
@@ -37,11 +37,9 @@ Metodenya purple team: serangan dilaksanakan, mitigasi disiapkan, kemudian seran
 
 **Narasi:**
 
-Penyiapan lingkungan dijalankan dari host melalui VBoxManage.
+Penyiapan lingkungan dijalankan dari host. Ketiga mesin dinyalakan tanpa jendela grafis, dengan urutan target, penyerang, kemudian pemantau, karena pemantau paling lama mencapai kondisi siap.
 
-Perintah `startvm` dipanggil tiga kali, masing-masing dengan nama mesin sebagai argumen. Opsi `--type headless` menjalankan mesin tanpa jendela grafis, sehingga sumber daya host tidak terpakai untuk tampilan. Urutannya target, penyerang, kemudian pemantau, karena pemantau paling lama mencapai kondisi siap.
-
-Perintah `list runningvms` menampilkan daftar mesin yang sedang beroperasi, dan dipakai untuk memastikan ketiganya aktif sebelum pengujian dimulai.
+Perintah terakhir menampilkan daftar mesin yang sedang beroperasi, untuk memastikan ketiganya aktif sebelum pengujian dimulai.
 
 ---
 
@@ -59,13 +57,11 @@ sudo bash /tmp/purple.sh reset
 
 Sebelum pengujian, target dikembalikan ke kondisi sebelum mitigasi. Tahap ini prasyarat: apabila target sudah berada pada kondisi aman, serangan tidak akan berhasil, sehingga tidak ada fenomena yang dapat diobservasi.
 
-Perintah ini terdiri atas tiga bagian. `sudo` menjalankan perintah berikutnya dengan hak administrator, karena proses yang dihentikan berjalan sebagai layanan sistem. `bash` mengeksekusi berkas skrip, bukan perintah tunggal. Argumen `reset` memilih mode pengembalian kondisi, yang berbeda dari mode `mitigasi` dan mode `cek` pada berkas yang sama.
-
-Pada mode tersebut, skrip menghentikan proses aplikasi dan subscriber, memasang berkas aplikasi versi rentan, membuka layanan pesan, menghapus data uji dari sesi sebelumnya, melepas blokir alamat penyerang, lalu menjalankan kembali kedua proses.
+Perintah ini menjalankan skrip pengembalian kondisi dengan hak administrator. Skrip menghentikan proses yang sedang berjalan, memasang aplikasi versi rentan, membuka layanan pesan, menghapus data uji dari sesi sebelumnya, melepas blokir alamat penyerang, lalu menjalankan kembali seluruh proses.
 
 Proses lama harus dihentikan lebih dahulu. Apabila berkas diganti sementara aplikasi masih berjalan, aplikasi tetap memakai kode yang telah dimuat ke memori: berkas pada disk sudah benar, tetapi perilakunya tidak berubah.
 
-Di akhir, skrip memverifikasi hasilnya sendiri dengan satu permintaan normal dan satu permintaan berisi payload injeksi. Apabila yang kedua tidak membuka seluruh tabel, kondisi dinyatakan belum rentan.
+Di akhir, skrip memverifikasi hasilnya sendiri. Apabila kondisi rentan belum tercapai, pengujian tidak dilanjutkan.
 
 ---
 
@@ -84,11 +80,11 @@ sudo tcpdump -i eth2 -n -w /tmp/pbl5-demo.pcap -U
 
 Pengujian dimulai dari titik pemantauan, karena seluruh rangkaian serangan harus terdokumentasi.
 
-Perintah `ip -br a` menampilkan daftar antarmuka jaringan. Opsi `-br` meringkas keluaran menjadi satu baris per antarmuka, dan `a` menampilkan seluruh antarmuka, bukan hanya yang aktif. Perintah ini hanya membaca, tidak mengubah konfigurasi. Hasilnya, alamat pemantau adalah 192.168.5.200 pada antarmuka eth2.
+Perintah pertama menampilkan daftar antarmuka jaringan pada mesin pemantau. Perintah ini hanya membaca, tidak mengubah konfigurasi. Dari hasilnya diketahui bahwa antarmuka yang terhubung ke segmen target adalah eth2, dengan alamat 192.168.5.200.
 
-Perintah `tcpdump` merekam lalu lintas pada antarmuka tersebut. Opsi `-i eth2` menentukan antarmuka yang direkam. Opsi `-n` menonaktifkan penerjemahan alamat menjadi nama host, sehingga proses tidak tertahan oleh permintaan DNS. Opsi `-w /tmp/pbl5-demo.pcap` mengalihkan keluaran ke berkas dalam format pcap. Opsi `-U` menulis langsung ke berkas tanpa menunggu buffer penuh, sehingga paket tetap tersimpan apabila proses dihentikan mendadak.
+Perintah kedua merekam seluruh lalu lintas pada antarmuka tersebut dan menyimpannya ke dalam berkas, bukan menampilkannya di layar. Karena keluarannya berupa berkas, terminal akan tampak kosong selama proses berjalan. Perintah ini dijalankan dengan hak administrator karena perekaman pada antarmuka jaringan memerlukannya.
 
-Karena keluarannya berupa berkas, terminal tidak menampilkan apa pun. Perekaman dimulai sebelum serangan pertama, karena sensor pada lingkungan ini menganalisis berkas tangkapan, bukan memantau media transmisi secara langsung. Apabila perekaman dimulai setelah serangan, tidak ada data yang dapat dianalisis.
+Perekaman dimulai sebelum serangan pertama, karena sensor pada lingkungan ini menganalisis berkas tangkapan, bukan memantau media transmisi secara langsung. Apabila perekaman dimulai setelah serangan, tidak ada data yang dapat dianalisis.
 
 ---
 
@@ -106,7 +102,7 @@ nmap -sS -sV -p- 192.168.5.5
 
 Tahap pertama adalah pemetaan layanan, untuk mengidentifikasi permukaan serangan yang tersisa setelah hardening.
 
-Opsi `-sS` memakai teknik pemindaian setengah terbuka: koneksi tidak diselesaikan sampai akhir, sehingga lebih cepat dan tidak meninggalkan catatan sesi pada layanan yang dipindai. Opsi `-sV` membaca versi layanan pada setiap port terbuka. Opsi `-p-` memperluas cakupan ke seluruh rentang port, bukan hanya port yang umum. Alamat terakhir adalah sasaran.
+Perintah ini memindai seluruh rentang port pada mesin target, sekaligus membaca versi layanan yang memberikan respons. Teknik yang dipakai bersifat setengah terbuka, sehingga pemindaian berlangsung cepat dan tidak meninggalkan catatan sesi pada layanan yang dipindai.
 
 Hasilnya tiga port: 22 untuk SSH, 1883 untuk layanan pesan, dan 3000 untuk dashboard. Port 3306, layanan basis data, tidak terdeteksi.
 
@@ -130,11 +126,11 @@ sudo fail2ban-client status sshd
 
 Tahap kedua diarahkan pada mekanisme autentikasi, dengan tiga perintah berbeda.
 
-Perintah pertama menguji keterjangkauan port basis data memakai `nc`. Opsi `-z` menempatkannya pada mode tanpa pengiriman data: koneksi dibuka, status dicatat, lalu ditutup. Opsi `-v` menampilkan proses koneksi secara rinci. Dua argumen terakhir adalah alamat dan port yang diuji. Hasilnya timeout, bukan refused. Refused berarti ada layanan yang menjawab dan menolak, timeout berarti paket dibuang tanpa respons.
+Perintah pertama menguji apakah port basis data dapat dihubungi, tanpa mengirimkan data apa pun. Hasilnya timeout, bukan refused. Refused berarti ada layanan yang menjawab dan menolak, sedangkan timeout berarti paket dibuang tanpa respons.
 
-Perintah kedua menguji daftar kata sandi terhadap SSH memakai `hydra`. Opsi `-l root` menetapkan satu nama pengguna tunggal, bukan daftar, sehingga seluruh percobaan diarahkan ke akun root. Opsi `-P` menunjuk berkas daftar kata sandi yang dipakai. Argumen `ssh://192.168.5.5` menetapkan protokol sekaligus sasaran, sehingga alat ini berbicara dalam protokol SSH. Opsi `-t 4` membatasi empat percobaan paralel, agar layanan tidak dibanjiri. Prosesnya terhenti pada tahap negosiasi, karena layanan hanya menerima autentikasi berbasis kunci. Tidak ada kata sandi yang benar-benar diuji, sehingga tidak ada kesimpulan mengenai kekuatan kata sandi.
+Perintah kedua mencoba daftar kata sandi umum terhadap layanan SSH, dengan akun root sebagai sasaran dan jumlah percobaan paralel dibatasi agar layanan tidak dibanjiri. Prosesnya terhenti pada tahap negosiasi, karena layanan hanya menerima autentikasi berbasis kunci. Tidak ada kata sandi yang benar-benar diuji, sehingga tidak ada kesimpulan mengenai kekuatan kata sandi.
 
-Perintah ketiga dijalankan pada mesin target, bukan penyerang. `fail2ban-client status sshd` menampilkan keadaan mekanisme pemblokiran untuk layanan SSH: jumlah kegagalan, jumlah alamat yang diblokir, dan daftarnya. Perintah ini hanya membaca status. Hasilnya menunjukkan percobaan gagal berulang dicatat, lalu alamat sumbernya diblokir otomatis.
+Perintah ketiga dijalankan pada mesin target, bukan penyerang, dan hanya membaca keadaan mekanisme pemblokiran otomatis untuk layanan SSH. Hasilnya menunjukkan percobaan gagal berulang dicatat, lalu alamat sumbernya diblokir.
 
 ---
 
@@ -154,13 +150,13 @@ curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"
 
 Tahap ketiga diarahkan pada lapisan aplikasi, dan pada tahap inilah temuan utama diperoleh.
 
-Ketiga perintah memakai `curl`, yang mengirim permintaan HTTP ke alamat yang ditulis lalu menampilkan responsnya di terminal. Yang membedakan ketiganya bukan alatnya, melainkan nilai parameter `device`.
+Ketiga perintah mengirim permintaan HTTP ke dashboard lalu menampilkan responsnya di terminal. Yang membedakan ketiganya bukan alatnya, melainkan nilai yang dikirim pada parameter perangkat.
 
-Perintah pertama mengirim `sensor-01`, identitas perangkat yang memang terdaftar. Fungsinya sebagai pembanding bentuk respons normal. Hasilnya dua baris.
+Perintah pertama meminta data perangkat yang memang terdaftar, sebagai pembanding bentuk respons normal. Hasilnya dua baris.
 
-Perintah kedua mengirim `x%27%20OR%20%271%27%3D%271`. Tanda `%27` adalah representasi terenkode dari kutip tunggal, dan `%20` dari spasi, karena keduanya tidak dapat ditulis langsung pada alamat. Apabila diterjemahkan, nilainya berbunyi `x' OR '1'='1`. Kutip pertama menutup pembatas teks pada query, lalu klausa `OR` menambahkan kondisi yang selalu bernilai benar. Huruf `x` di awal dipilih karena tidak merujuk pada perangkat mana pun, sehingga seluruh baris yang muncul berasal dari klausa tambahan itu. Hasilnya seluruh isi tabel terbuka.
+Perintah kedua mengirim nilai yang, setelah diterjemahkan dari bentuk terenkodenya, berisi kutip penutup diikuti klausa kondisi yang selalu bernilai benar. Kutip itu memutus batas antara perintah dan data, sehingga klausa tambahan dibaca sebagai bagian dari query. Hasilnya seluruh isi tabel terbuka.
 
-Perintah ketiga mengirim nilai serupa dengan kondisi `AND '1'='2`, yang selalu bernilai salah. Hasilnya kosong.
+Perintah ketiga mengirim pola yang sama, tetapi dengan kondisi yang selalu bernilai salah. Hasilnya kosong.
 
 Hasil kosong itulah buktinya. Apabila hanya perintah kedua yang disajikan, masih terbuka kemungkinan bahwa yang terjadi adalah kesalahan penyajian. Dengan hasil nol pada perintah ketiga, yang berubah jelas logika query, bukan tampilan.
 
@@ -184,11 +180,11 @@ tail -3 /var/log/iot/subscriber.log
 
 Bagian kedua diarahkan pada injeksi data melalui layanan pesan, dengan tiga perintah pada dua mesin.
 
-Perintah pertama, di terminal kiri mesin penyerang, berlangganan pesan. Opsi `-h 192.168.5.5` menetapkan broker yang dituju. Opsi `-t 'sensors/#'` menetapkan topik yang diikuti, dengan `#` sebagai wildcard yang mencakup seluruh subtopik di bawah `sensors`. Opsi `-v` menampilkan nama topik di samping isi pesan, agar asal setiap pesan diketahui. Perintah ini berjalan terus, fungsinya memastikan pesan benar-benar sampai ke broker.
+Perintah pertama dijalankan di terminal kiri mesin penyerang, dan berfungsi memantau seluruh pesan yang masuk ke broker pada semua topik sensor, sambil menampilkan asal setiap pesan. Perintah ini berjalan terus sampai dihentikan.
 
-Perintah kedua, di terminal kanan, mengirim pesan. Opsi `-t sensors/sensor-99` menetapkan topik tujuan, dan di sinilah identitas perangkat ditentukan, bukan oleh perangkatnya. Opsi `-m 99.90` menetapkan isi pesan, yaitu satu nilai suhu. Pesan diterima tanpa autentikasi dan tanpa penolakan.
+Perintah kedua dijalankan di terminal kanan, dan mengirim satu pesan ke topik perangkat yang ditentukan, dengan isi berupa satu nilai suhu. Identitas perangkat ditentukan oleh pengirim, bukan oleh perangkatnya. Pesan diterima tanpa autentikasi dan tanpa penolakan.
 
-Perintah ketiga dijalankan pada mesin target. `tail` menampilkan bagian akhir berkas, opsi `-3` membatasi pada tiga baris terakhir, dan berkas yang dibaca adalah log layanan penerima. Perintah ini hanya memastikan pesannya tercatat di sisi penerima, bukan sekadar lewat di jaringan.
+Perintah ketiga dijalankan pada mesin target, dan menampilkan bagian akhir log layanan penerima. Fungsinya memastikan pesan benar-benar tercatat di sisi penerima, bukan sekadar lewat di jaringan.
 
 Hasilnya, data tersimpan dengan identitas sensor-99 dan suhu 99,9. Perangkat itu tidak pernah ada, diciptakan pada pengujian ini, namun layanan penerima memperlakukannya sebagai data valid.
 
@@ -215,9 +211,9 @@ sudo so-import-pcap /tmp/pbl5-demo.pcap
 
 Setelah serangan selesai, perekaman dihentikan dan hasilnya diperiksa sebelum dianalisis.
 
-Perintah pertama menjalankan `tcpdump` dengan opsi `-r`, yang berarti membaca kembali berkas tangkapan alih-alih merekam antarmuka. Keluarannya disalurkan melalui pipa ke `wc -l` untuk menghitung baris, dan satu baris mewakili satu paket. Apabila hasilnya nol, perekaman dinyatakan gagal.
+Perintah pertama membaca kembali berkas tangkapan yang telah dibuat, lalu menghitung jumlah paket di dalamnya. Apabila hasilnya nol, perekaman dinyatakan gagal.
 
-Perintah kedua, `so-import-pcap`, memasukkan berkas yang sama ke dalam sensor. Dua mesin analisis dijalankan terhadap berkas itu: Suricata untuk pencocokan aturan, dan Zeek untuk pembentukan catatan koneksi. Hasilnya kemudian dimasukkan ke basis data pencarian.
+Perintah kedua memasukkan berkas yang sama ke dalam sensor. Dua mesin analisis dijalankan terhadap berkas itu: Suricata untuk pencocokan aturan, dan Zeek untuk pembentukan catatan koneksi. Hasilnya kemudian dimasukkan ke basis data pencarian milik sensor.
 
 Prosesnya memerlukan waktu. Konsekuensinya, analisis berlangsung setelah serangan, bukan pada saat serangan berlangsung.
 
@@ -237,11 +233,11 @@ Prosesnya memerlukan waktu. Konsekuensinya, analisis berlangsung setelah seranga
 
 Hasil analisis disajikan pada antarmuka pencarian mesin pemantau.
 
-Langkah pertama memilih index pattern, yaitu kumpulan indeks yang akan dicari. Yang dipakai adalah pola yang memuat penanda `logstash`, sesuai penamaan pada versi sensor di lab ini.
+Langkah pertama memilih kumpulan indeks yang akan dicari, sesuai penamaan pada versi sensor yang digunakan di lab ini.
 
-Langkah kedua menetapkan rentang waktu. Data hasil impor membawa waktu asli perekaman, bukan waktu impor, sehingga rentang diperlebar menjadi dua puluh empat jam. Apabila terlalu sempit, hasilnya kosong meskipun impor berhasil.
+Langkah kedua menetapkan rentang waktu. Data hasil impor membawa waktu asli perekaman, bukan waktu impor, sehingga rentangnya diperlebar menjadi dua puluh empat jam. Apabila terlalu sempit, hasil pencarian akan kosong meskipun impor berhasil.
 
-Langkah ketiga mengisi kolom pencarian dengan dua alamat yang digabungkan `AND`. Pencarian ini memakai teks bebas, bukan filter berdasarkan nama kolom, karena penamaan kolom berbeda antar versi sensor. Hasilnya catatan yang memuat kedua alamat sekaligus, yaitu koneksi antara penyerang dan target.
+Langkah ketiga mencari dua alamat sekaligus dengan pencarian teks bebas, bukan filter berdasarkan nama kolom, karena penamaan kolom berbeda antar versi sensor. Hasilnya catatan yang memuat keduanya, yaitu koneksi antara penyerang dan target.
 
 Data yang muncul mencakup port tujuan, jumlah byte, dan status penyelesaian. Statusnya menunjukkan koneksi selesai normal, yang berarti server memberi respons.
 
@@ -261,9 +257,9 @@ sudo bash /tmp/purple.sh mitigasi
 
 **Narasi:**
 
-Mitigasi dilakukan pada lapisan aplikasi, memakai skrip yang sama dengan tahap pengembalian kondisi, tetapi dengan mode berbeda.
+Mitigasi dilakukan pada lapisan aplikasi, memakai skrip yang sama dengan tahap pengembalian kondisi, tetapi dengan mode yang berbeda.
 
-Argumen `mitigasi` memilih rangkaian tindakan yang hanya menyentuh aplikasi. Konfigurasi layanan pesan, basis data, dan mekanisme pemblokiran tidak diubah, agar perubahan yang diuji terbatas pada satu variabel dan perbedaan hasil dapat diatribusikan dengan jelas.
+Mode ini hanya menyentuh aplikasi. Konfigurasi layanan pesan, basis data, dan mekanisme pemblokiran tidak diubah, agar perubahan yang diuji terbatas pada satu variabel dan perbedaan hasil dapat diatribusikan dengan jelas.
 
 Skrip bekerja dalam tiga urutan: menghentikan aplikasi, mengganti berkasnya dengan versi yang diperbaiki, lalu menjalankannya kembali.
 
@@ -286,7 +282,7 @@ curl "http://192.168.5.5:3000/sensor?device=sensor-01"
 
 **Narasi:**
 
-Verifikasi memakai dua perintah `curl` yang identik dengan tahap sebelumnya, baik alamat, parameter, maupun payload. Tidak ada karakter yang diubah. Perbedaannya hanya satu: aplikasinya telah diganti.
+Verifikasi memakai dua perintah yang identik dengan tahap sebelumnya, baik alamat, parameter, maupun payload. Tidak ada karakter yang diubah. Perbedaannya hanya satu: aplikasinya telah diganti.
 
 Perintah pertama mengirim payload yang sebelumnya membuka seluruh tabel. Hasilnya sekarang kosong.
 
