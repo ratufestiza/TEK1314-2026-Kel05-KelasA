@@ -10,13 +10,12 @@ Ini yang paling gampang bikin salah, jadi dibaca dulu.
 
 | Perintah | Dijalankan di | Alamat yang dipakai |
 | --- | --- | --- |
-| Balikkan `app.py`, restart, cek service | VM AYAM (Target) | `127.0.0.1` atau tanpa alamat |
-| Uji cepat aplikasi hidup | VM AYAM (Target) | `127.0.0.1:3000`, karena menguji dirinya sendiri |
+| Balikkan `app.py`, restart, cek service | VM AYAM (Target) | tanpa alamat, cukup nama service |
 | Unban fail2ban | VM AYAM (Target) | tanpa alamat |
-| nmap, nc, hydra, curl serangan, mosquitto_pub | VM Cybersecurity LabVM (Attacker) | `192.168.5.5`, jangan pernah `127.0.0.1` |
+| nmap, nc, hydra, curl serangan, mosquitto_pub, mosquitto_sub | VM Cybersecurity LabVM (Attacker) | `192.168.5.5` |
 | Buka Kibana, cek alert | VM CyberOps Security Onion | `192.168.5.200` |
 
-Aturannya satu: `127.0.0.1` hanya berarti "mesin ini sendiri". Kalau diketik di Attacker, yang ditembak adalah Attacker, bukan Target.
+Semua perintah uji di runbook ini dijalankan dari Attacker dan menembak `192.168.5.5`.
 
 ---
 
@@ -69,7 +68,7 @@ Harus muncul `inet 192.168.5.5/24`. Kalau kosong, pasang ulang alamat pada adapt
 
 Kalau tetap kosong, berarti berkas netplan belum memuat alamat itu. Buka dengan `sudo nano /etc/netplan/50-cloud-init.yaml`, isi alamat `192.168.5.5/24` pada antarmuka yang menuju `pbl5-lan`, simpan, lalu jalankan `sudo netplan apply` lagi.
 
-Bukti terakhir alamat sudah benar: saat Flask menyala, outputnya menyebut `Running on http://192.168.5.5:3000`. Kalau yang muncul hanya `127.0.0.1` dan `10.0.3.15`, alamat segmen lab belum terpasang dan Attacker tidak akan bisa menyentuh port 3000.
+Bukti terakhir alamat sudah benar: saat Flask menyala, outputnya menyebut `Running on http://192.168.5.5:3000`. Kalau `192.168.5.5` tidak ada di daftar itu, alamat segmen lab belum terpasang dan Attacker tidak akan bisa menyentuh port 3000.
 
 ---
 
@@ -129,21 +128,21 @@ Kalau tidak ada, cari cadangannya:
 
 ---
 
-## Langkah 5 - Uji dari dalam Target sendiri
+## Langkah 5 - Uji aplikasi sudah hidup
 
-**Jalankan di VM AYAM, bukan di Attacker.** Di sini `127.0.0.1` benar, karena yang dites adalah mesin itu sendiri. Tujuannya memastikan aplikasi hidup sebelum diuji dari jaringan.
+Jalankan di VM Attacker. Alamatnya `192.168.5.5`, titik.
 
-1. Permintaan normal harus mengembalikan dua baris:
+1. Pembanding normal, harus mengembalikan dua baris:
 
-`curl "http://127.0.0.1:3000/sensor?device=sensor-01"`
+`curl "http://192.168.5.5:3000/sensor?device=sensor-01"`
 
-2. Payload OR harus mengembalikan seluruh isi tabel, bukan array kosong:
+2. Payload OR, harus mengembalikan seluruh isi tabel:
 
-`curl "http://127.0.0.1:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
+`curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"`
 
-Kalau hasilnya masih array kosong, berarti berkas yang ditukar bukan yang dipakai service. Cek lagi dengan `sudo systemctl cat <nama-service>` untuk melihat berkas mana yang benar-benar dijalankan. Kalau Flask dijalankan manual dengan `sudo python3 app.py`, pastikan terminalnya masih hidup.
+Kalau nomor 1 gagal connect, jangan lanjut. Berarti Flask mati, atau alamat `192.168.5.5` belum terpasang di AYAM, atau ufw menahan. Periksa di AYAM dengan `ip a | grep 192.168.5`, lalu `sudo netplan apply` kalau kosong.
 
-**Kalau langkah ini ditolak di VM Attacker, itu wajar.** `127.0.0.1` di Attacker berarti Attacker itu sendiri, bukan Target. Untuk pengujian dari Attacker, pakai Langkah 8.
+Kalau nomor 1 keluar dua baris tapi nomor 2 keluar array kosong, berarti yang jalan masih versi aman. Tukar ulang berkasnya di AYAM dan restart.
 
 ---
 
